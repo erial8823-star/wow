@@ -1,0 +1,256 @@
+import OBR from 'https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm';
+
+// 从 URL 解析 tokenId
+const urlParams = new URLSearchParams(window.location.search);
+const tokenId = urlParams.get('tokenId');
+let characterData = null;
+let isGMAccess = false;
+
+if (!tokenId) {
+  document.getElementById('cardContainer').innerHTML = `
+    <div style="text-align: center; padding: 40px; color: #e74c3c;">
+      ❌ 错误：未指定 Token ID
+    </div>
+  `;
+} else {
+  // 初始化 OBR SDK
+  OBR.onReady(async () => {
+    // 判断当前用户角色
+    const role = await OBR.player.getRole();
+    isGMAccess = (role === 'GM');
+
+    // 加载数据并渲染
+    await loadAndRender();
+
+    // 监听场景棋子发生的数据改变，实现多人联机实时同步更新
+    OBR.scene.items.onChange(async (items) => {
+      const token = items.find(item => item.id === tokenId);
+      if (token && token.metadata['com.wow.fu-character/data']) {
+        characterData = token.metadata['com.wow.fu-character/data'];
+        renderCard(characterData);
+      }
+    });
+  });
+}
+
+// 从 OBR 棋子 metadata 中读取数据
+async function loadAndRender() {
+  try {
+    const items = await OBR.scene.items.getItems([tokenId]);
+    if (items.length > 0 && items[0].metadata['com.wow.fu-character/data']) {
+      characterData = items[0].metadata['com.wow.fu-character/data'];
+      renderCard(characterData);
+    } else {
+      document.getElementById('cardContainer').innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #e67e22;">
+          ⚠️ 此 Token 未绑定任何角色卡，或绑定数据已丢失。<br>
+          请先在右侧管理界面中，选择棋子并点击一张导入的角色卡进行绑定。
+        </div>
+      `;
+    }
+  } catch (err) {
+    document.getElementById('cardContainer').innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #e74c3c;">
+        读取数据失败: ${err.message}
+      </div>
+    `;
+  }
+}
+
+// 渲染卡片 HTML
+function renderCard(d) {
+  const container = document.getElementById('cardContainer');
+
+  // 渲染 HP/MP/IP 等进度条
+  const renderResource = (label, current, max, fieldKey, cssClass) => {
+    const percent = max > 0 ? Math.min((current / max) * 100, 100) : 0;
+    return `
+      <div class="resource-row ${cssClass}">
+        <span class="label">${label}</span>
+        <div class="bar-wrap" data-field="${fieldKey}">
+          <div class="bar-fill" style="width:${percent}%;"></div>
+          <div class="bar-text">
+            <span class="fu-editable" data-field="${fieldKey}Cur">${current}</span>
+            <span style="margin:0 2px;">/</span>
+            <span class="fu-editable" data-field="${fieldKey}Max">${max}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  // 渲染武器行
+  const renderWeaponRow = (weapon) => {
+    if (!weapon || !weapon.name || weapon.name.trim() === '') {
+      return `<tr class="empty-row"><td colspan="6" style="text-align:center; color:#555;">（无武器）</td></tr>`;
+    }
+    return `
+      <tr>
+        <td>${weapon.category || '-'}</td>
+        <td class="weapon-name">${weapon.name}</td>
+        <td>${weapon.attack || '-'}</td>
+        <td>${weapon.attr || '-'}</td>
+        <td>${weapon.type || '-'}</td>
+        <td>${weapon.damage || '-'}</td>
+      </tr>
+    `;
+  };
+
+  container.innerHTML = `
+    <div class="fu-card-header">
+      <div>
+        <span style="font-size:22px; color:#f0c060;">${d.name || '未命名角色'}</span>
+        <span class="level">Lv.${d.level || 0}</span>
+      </div>
+      <button class="fu-card-close" id="fuCloseBtn">×</button>
+    </div>
+
+    <div class="fu-card-body">
+      <div class="fu-attributes">
+        <div class="fu-attr-item"><span class="label">敏捷</span><span class="value">D${d.dex || 0}</span></div>
+        <div class="fu-attr-item"><span class="label">洞察</span><span class="value">D${d.ins || 0}</span></div>
+        <div class="fu-attr-item"><span class="label">力量</span><span class="value">D${d.mig || 0}</span></div>
+        <div class="fu-attr-item"><span class="label">意志</span><span class="value">D${d.wlp || 0}</span></div>
+      </div>
+
+      <div class="fu-combat-stats">
+        <span>⚔️ 先攻 <span class="num fu-editable" data-field="init">${d.init || 0}</span></span>
+        <span>🛡️ 物防 <span class="num fu-editable" data-field="pd">${d.pd || 0}</span></span>
+        <span>✨ 魔防 <span class="num fu-editable" data-field="md">${d.md || 0}</span></span>
+      </div>
+
+      ${renderResource('HP', d.hp, d.hpMax, 'hp', 'resource-hp')}
+      ${renderResource('MP', d.mp, d.mpMax, 'mp', 'resource-mp')}
+      ${renderResource('IP', d.ip, d.ipMax, 'ip', 'resource-ip')}
+      ${renderResource('命刻', d.crisisCurrent, d.crisisMax, 'crisis', 'resource-crisis')}
+
+      <div class="fu-crisis-box">
+        <div class="title">🔥 零界能力</div>
+        <div class="detail">
+          <strong>${d.crisisName || '（未设置）'}</strong>
+          ${d.crisisCondition ? `｜ 条件：${d.crisisCondition}` : ''}
+          ${d.crisisSlots ? `｜ 填充格数：${d.crisisSlots}` : ''}
+        </div>
+      </div>
+
+      <div class="fu-defenses">
+        <span class="tag"><strong>弱点：</strong>${d.weakness || '无'}</span>
+        <span class="tag"><strong>抵抗：</strong>${d.resistance || '无'}</span>
+        <span class="tag"><strong>免疫：</strong>${d.immunity || '无'}</span>
+        <span class="tag"><strong>吸收：</strong>${d.absorb || '无'}</span>
+      </div>
+
+      <table class="fu-weapons">
+        <thead><tr><th>类别</th><th>名称</th><th>检定</th><th>属性</th><th>类型</th><th>伤害</th></tr></thead>
+        <tbody>
+          ${renderWeaponRow(d.weapon1)}
+          ${renderWeaponRow(d.weapon2)}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // 绑定关闭窗口事件
+  const closeBtn = document.getElementById('fuCloseBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', async () => {
+      const currentId = await OBR.popover.getCurrentID();
+      OBR.popover.close(currentId);
+    });
+  }
+
+  // 初始化数值点击修改监听
+  setupEditableFields();
+}
+
+// 设置可编辑数值点击处理
+function setupEditableFields() {
+  const editables = document.querySelectorAll('.fu-editable');
+  editables.forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const field = el.dataset.field;
+      const oldValue = el.textContent.trim();
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.className = 'fu-editable-input';
+      input.value = oldValue;
+      input.style.width = '55px';
+      input.style.background = '#0d0d1a';
+      input.style.color = '#fff';
+      input.style.border = '1px solid #555';
+      input.style.borderRadius = '3px';
+      input.style.padding = '2px';
+      
+      el.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const saveNewValue = async () => {
+        let newVal = input.value.trim();
+        if (newVal === '') newVal = '0';
+        const numVal = Number(newVal);
+        if (isNaN(numVal)) {
+          alert('请输入有效数字');
+          input.replaceWith(el);
+          return;
+        }
+        
+        // 更新元数据
+        await updateMetadataField(field, numVal);
+        el.textContent = numVal;
+        input.replaceWith(el);
+      };
+
+      input.addEventListener('blur', saveNewValue);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          input.blur();
+        }
+        if (ev.key === 'Escape') {
+          input.replaceWith(el);
+        }
+      });
+    });
+  });
+}
+
+// 更新 OBR 上的元数据
+async function updateMetadataField(field, value) {
+  let targetKey = '';
+  if (field === 'init' || field === 'pd' || field === 'md') {
+    targetKey = field;
+  } else if (field.endsWith('Cur')) {
+    const base = field.slice(0, -3);
+    if (base === 'hp') targetKey = 'hp';
+    else if (base === 'mp') targetKey = 'mp';
+    else if (base === 'ip') targetKey = 'ip';
+    else if (base === 'crisis') targetKey = 'crisisCurrent';
+  } else if (field.endsWith('Max')) {
+    const base = field.slice(0, -3);
+    if (base === 'hp') targetKey = 'hpMax';
+    else if (base === 'mp') targetKey = 'mpMax';
+    else if (base === 'ip') targetKey = 'ipMax';
+    else if (base === 'crisis') targetKey = 'crisisMax';
+  }
+
+  if (!targetKey) return;
+
+  // 更新本地变量
+  characterData[targetKey] = value;
+
+  // 更新 OBR Token 元数据并广播给全房间
+  await OBR.scene.items.updateItems([tokenId], (items) => {
+    for (let item of items) {
+      if (item.type === 'TOKEN' && item.metadata['com.wow.fu-character/data']) {
+        item.metadata['com.wow.fu-character/data'][targetKey] = value;
+        
+        // 实时更新 Token 在地图上显示的原生标签文本
+        const d = item.metadata['com.wow.fu-character/data'];
+        item.text.plainText = `${d.name}\nHP ${d.hp}/${d.hpMax}`;
+      }
+    }
+  });
+  console.log(`💾 元数据已写入: ${targetKey} = ${value}`);
+}
