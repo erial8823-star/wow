@@ -84,13 +84,10 @@ function renderList() {
 
   // 初始化加载预览
   if (!bindTokenId) {
-    if (selectedPreviewCardId && cards.some(c => c.id === selectedPreviewCardId)) {
-      loadPreview(selectedPreviewCardId);
-    } else if (cards.length > 0) {
-      selectedPreviewCardId = cards[0].id;
-      localStorage.setItem('fu-preview-selected-id', selectedPreviewCardId);
-      const items = list.querySelectorAll('.list-item');
-      if (items.length > 0) items[0].classList.add('active');
+    // 默认折叠时不加载角色高亮与卡片
+    if (document.body.classList.contains('collapsed')) {
+      loadPreview(null);
+    } else if (selectedPreviewCardId && cards.some(c => c.id === selectedPreviewCardId)) {
       loadPreview(selectedPreviewCardId);
     } else {
       loadPreview(null);
@@ -108,13 +105,19 @@ function renderList() {
         return;
       }
 
-      // 如果不是绑定模式，点击切换预览卡片
+      // 如果不是绑定模式，点击切换预览卡片并动态展开
       if (!bindTokenId) {
         selectedPreviewCardId = cardId;
         localStorage.setItem('fu-preview-selected-id', cardId);
         
         list.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
         item.classList.add('active');
+        
+        // 如果当前是折叠状态，先拉宽窗口
+        if (document.body.classList.contains('collapsed')) {
+          document.body.classList.remove('collapsed');
+          OBR.action.setWidth(920).catch(() => {});
+        }
         
         loadPreview(cardId);
         return;
@@ -430,7 +433,7 @@ function renderPreviewCard(d) {
           <span style="font-size:20px;color:#f0c060;">${d.name || '未命名'}</span>
           <span class="level" style="font-size:13px;background:#2c2c44;padding:2px 12px;border-radius:20px;color:#aab;margin-left:10px;border:1px solid #3a3a55;">Lv.${d.level || 0}</span>
         </div>
-        <span style="color:#666;font-size:11px;background:#1a1a2e;padding:2px 10px;border-radius:10px;border:1px solid #333;">预览</span>
+        <button class="btn-collapse" onclick="collapsePreview(event)" style="background:#2c2c44; border:1px solid #3a3a55; color:#aaa; font-size:11px; padding:2px 10px; border-radius:10px; cursor:pointer; transition: all 0.2s;">收起 ✕</button>
       </div>
       <div class="fu-preview-card-body" style="padding:16px 18px 18px 18px; overflow-y:auto; flex:1;">
         <!-- 四维 -->
@@ -456,3 +459,19 @@ function renderPreviewCard(d) {
     </div>
   `;
 }
+
+// 收起左侧预览并将窗口缩回 400 宽
+function collapsePreview(event) {
+  if (event) event.stopPropagation();
+  document.body.classList.add('collapsed');
+  selectedPreviewCardId = null;
+  localStorage.removeItem('fu-preview-selected-id');
+  
+  const list = document.getElementById('cardList');
+  if (list) {
+    list.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
+  }
+  
+  OBR.action.setWidth(400).catch(() => {});
+}
+window.collapsePreview = collapsePreview;
