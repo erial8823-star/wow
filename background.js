@@ -25,6 +25,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
+      icon: '/wow/assets/icon.png',
       label: '📋 绑定第一个FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -90,6 +91,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
+      icon: '/wow/assets/icon.png',
       label: '❤️ 绑定FU默认血条',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -138,6 +140,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
+      icon: '/wow/assets/icon.png',
       label: '🃏 打开FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }],
@@ -162,6 +165,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
+      icon: '/wow/assets/icon.png',
       label: '🗑️ 解除绑定',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }],
