@@ -1,4 +1,4 @@
-// background.js - 修复 icon 为有效 URI
+// background.js - 使用内联 SVG 图标（不需要外部图片）
 
 import OBR from '@owlbear-rodeo/sdk';
 
@@ -7,14 +7,13 @@ console.log('🔥 FU角色卡扩展后台已加载！');
 const STORAGE_PREFIX = 'cc-fu-data-';
 const BINDING_KEY = 'fu-binding-';
 
-// 图标 URL
-const ICON_BASE = 'https://erial8823-star.github.io/wow/assets/icon.png';
+// ✅ 使用内联 SVG 作为图标（不需要任何外部图片文件）
 const ICON_SVG = 'data:image/svg+xml,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f0c060">
-    <rect x="2" y="4" width="20" height="16" rx="2" stroke="white" stroke-width="0.5" fill="none"/>
-    <line x1="8" y1="8" x2="16" y2="8" stroke="white" stroke-width="0.5"/>
-    <line x1="8" y1="12" x2="14" y2="12" stroke="white" stroke-width="0.5"/>
-    <line x1="8" y1="16" x2="16" y2="16" stroke="white" stroke-width="0.5"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f0c060" stroke-width="2">
+    <rect x="2" y="4" width="20" height="16" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+    <line x1="8" y1="8" x2="16" y2="8" stroke="white" stroke-width="1.5"/>
+    <line x1="8" y1="12" x2="14" y2="12" stroke="white" stroke-width="1.5"/>
+    <line x1="8" y1="16" x2="16" y2="16" stroke="white" stroke-width="1.5"/>
   </svg>
 `);
 
@@ -122,7 +121,6 @@ function injectBubble(tokenId, tokenEl, data, cardId) {
       if (e.target.closest('.fu-lock-btn')) return;
       if (cardId) {
         console.log('🃏 打开卡片:', cardId);
-        // 触发自定义事件，由 popover 或主页面的脚本处理
         window.dispatchEvent(new CustomEvent('fu-open-card', { detail: { cardId } }));
       } else {
         alert(`📊 ${data.name}\nHP: ${data.hp}/${data.hpMax}\nMP: ${data.mp}/${data.mpMax}\n物防: ${data.pd}\n魔防: ${data.md}`);
@@ -164,17 +162,16 @@ function bindHpBarToToken(tokenId) {
 }
 
 // ============================================================
-// 使用枭熊2 SDK 注册右键菜单（修复 icon 为有效 URI）
+// 使用枭熊2 SDK 注册右键菜单（使用内联 SVG 图标）
 // ============================================================
 
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // ✅ 注册：绑定角色卡
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
-      icon: ICON_BASE,  // ✅ 使用图片 URL
+      icon: ICON_SVG,  // ✅ 使用内联 SVG
       label: '绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -200,11 +197,10 @@ OBR.onReady(() => {
     }
   });
 
-  // ✅ 注册：绑定血条组件
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
-      icon: ICON_SVG,  // ✅ 使用内联 SVG
+      icon: ICON_SVG,
       label: '绑定FU血条组件',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -222,11 +218,10 @@ OBR.onReady(() => {
     }
   });
 
-  // ✅ 注册：解绑
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
-      icon: ICON_BASE,  // ✅ 使用图片 URL
+      icon: ICON_SVG,
       label: '解绑',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
