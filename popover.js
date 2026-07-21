@@ -81,7 +81,7 @@ function renderList() {
       if (!bindTokenId) {
         OBR.popover.open({
           id: 'fu-card-preview',
-          url: `${base}/full-card.html?previewCardId=${cardId}`,
+          url: `${base}/full-card.html?previewCardId=${cardId}&t=${Date.now()}`,
           width: 620,
           height: 600
         });

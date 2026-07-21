@@ -14,7 +14,7 @@
       height: 100vh;
       overflow-y: auto;
     }
-    /* 使卡片适应弹窗大小，去掉原本固定定位和阴影 */
+    /* 使卡片适应弹窗大小，保留其漂亮的卡片边框、圆角与阴影 */
     .fu-full-card {
       position: relative !important;
       left: 0 !important;
@@ -22,8 +22,8 @@
       transform: none !important; /* 清除 main.css 里面的 translate(-50%, -50%) 偏移 */
       width: 100% !important;
       height: auto !important;
-      box-shadow: none !important;
-      border: none !important;
+      max-height: none !important; /* 允许高度自适应，不被 85vh 截断 */
+      overflow: visible !important; /* 允许内容展开，由外部 body 滚动 */
       margin: 0 auto;
     }
     .fu-card-close {

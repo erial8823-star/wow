@@ -43,7 +43,7 @@ OBR.onReady(() => {
       // 打开列表选择弹窗进入“绑定模式”
       OBR.popover.open({
         id: 'com.wow.fu-character/popover',
-        url: `${base}/popover.html?bindTokenId=${token.id}`,
+        url: `${base}/popover.html?bindTokenId=${token.id}&t=${Date.now()}`,
         width: 400,
         height: 600
       });
@@ -141,7 +141,7 @@ OBR.onReady(() => {
       
       OBR.popover.open({
         id: 'fu-card-popover',
-        url: `${base}/full-card.html?tokenId=${token.id}`,
+        url: `${base}/full-card.html?tokenId=${token.id}&t=${Date.now()}`,
         width: 620,
         height: 600
       });
@@ -193,7 +193,7 @@ OBR.onReady(() => {
             if (item.type === 'IMAGE' && item.metadata['com.wow.fu-character/data']) {
               OBR.popover.open({
                 id: 'fu-card-popover',
-                url: `${base}/full-card.html?tokenId=${item.id}`,
+                url: `${base}/full-card.html?tokenId=${item.id}&t=${Date.now()}`,
                 width: 620,
                 height: 600
               });
