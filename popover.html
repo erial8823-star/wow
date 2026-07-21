@@ -3,18 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <title>FU角色卡</title>
-  <!-- SheetJS will be imported and bundled locally in popover.js -->
+  <!-- 引入全局样式以支持预览大卡片的样式 -->
+  <link rel="stylesheet" href="./styles/main.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #1a1a2e;
       color: #eee;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      padding: 16px;
+      margin: 0;
+      padding: 0;
       height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* 双栏布局容器 */
+    .fu-manager-body {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* 左栏：预览区 */
+    .fu-manager-left {
+      flex: 1;
+      padding: 16px;
+      overflow: hidden;
+      background: #0d0d1a;
+      border-right: 1px solid #2a2a44;
       display: flex;
       flex-direction: column;
     }
+
+    /* 右栏：列表区 */
+    .fu-manager-right {
+      width: 320px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #14142a;
+      flex-shrink: 0;
+    }
+
+    /* 绑定模式下的布局微调 */
+    body.bind-mode .fu-manager-left {
+      display: none !important;
+    }
+    body.bind-mode .fu-manager-right {
+      width: 100vw !important;
+      border-left: none !important;
+    }
+
+    /* 右侧头部和尾部 */
     .header {
       display: flex;
       justify-content: space-between;
@@ -33,6 +75,7 @@
       font-size: 12px;
     }
     .btn-import:hover { background: #3da05a; }
+
     .list {
       flex: 1;
       overflow-y: auto;
@@ -55,6 +98,10 @@
     .list-item:hover {
       background: rgba(255, 255, 255, 0.07);
       border-color: #3a3a5a;
+    }
+    .list-item.active {
+      background: rgba(240, 192, 96, 0.12);
+      border-color: #f0c060;
     }
     .list-item .name {
       color: #eee;
@@ -97,17 +144,29 @@
     }
   </style>
 </head>
-<body>
-  <div class="header">
-    <h2>📋 FU角色卡</h2>
-    <!-- 隐藏的 File Input -->
-    <input type="file" id="excelFile" accept=".xlsx, .xls" style="display:none">
-    <button class="btn-import" id="importBtn">📄 导入Excel</button>
+<body class="preview-mode">
+  <div class="fu-manager-body">
+    <!-- 左栏：卡片信息预览区 -->
+    <div class="fu-manager-left" id="previewPane">
+      <div class="fu-manager-preview-placeholder">
+        <span style="color:#666;font-size:16px;">👈 请从右侧选择一张角色卡进行预览</span>
+      </div>
+    </div>
+
+    <!-- 右栏：角色卡列表与管理 -->
+    <div class="fu-manager-right">
+      <div class="header">
+        <h2>📋 FU角色卡</h2>
+        <!-- 隐藏的 File Input -->
+        <input type="file" id="excelFile" accept=".xlsx, .xls" style="display:none">
+        <button class="btn-import" id="importBtn">📄 导入Excel</button>
+      </div>
+      <div class="list" id="cardList">
+        <div class="empty">暂无角色卡<br>点击"导入Excel"上传</div>
+      </div>
+      <div class="footer" id="statusBar">正在初始化 SDK...</div>
+    </div>
   </div>
-  <div class="list" id="cardList">
-    <div class="empty">暂无角色卡<br>点击"导入Excel"上传</div>
-  </div>
-  <div class="footer" id="statusBar">正在初始化 SDK...</div>
 
   <!-- 使用本地构建打包的脚本 -->
   <script type="module" src="./dist/popover.js"></script>

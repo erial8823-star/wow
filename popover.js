@@ -9,6 +9,17 @@ const bindTokenId = urlParams.get('bindTokenId');
 let bindTokenName = '';
 const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
+let selectedPreviewCardId = localStorage.getItem('fu-preview-selected-id') || null;
+
+// 根据当前模式设置 Body 类名
+if (bindTokenId) {
+  document.body.classList.add('bind-mode');
+  document.body.classList.remove('preview-mode');
+} else {
+  document.body.classList.add('preview-mode');
+  document.body.classList.remove('bind-mode');
+}
+
 // 初始化 OBR SDK
 OBR.onReady(async () => {
   isSdkReady = true;
@@ -48,12 +59,14 @@ function renderList() {
   if (cards.length === 0) {
     list.innerHTML = `<div class="empty">暂无角色卡<br>点击"导入Excel"上传</div>`;
     document.getElementById('statusBar').textContent = '共 0 张角色卡';
+    if (!bindTokenId) loadPreview(null);
     return;
   }
   let html = '';
   cards.forEach(card => {
+    const isActive = (card.id === selectedPreviewCardId && !bindTokenId) ? 'active' : '';
     html += `
-      <div class="list-item" data-id="${card.id}">
+      <div class="list-item ${isActive}" data-id="${card.id}">
         <span class="name">${card.name}</span>
         <div class="id-wrap">
           <span class="id">${card.id}</span>
@@ -69,10 +82,25 @@ function renderList() {
     document.getElementById('statusBar').textContent = `共 ${cards.length} 张角色卡｜点击卡片预览，右键棋子绑定`;
   }
 
-  // 点击列表项进行 Token 绑定 或 打开预览
+  // 初始化加载预览
+  if (!bindTokenId) {
+    if (selectedPreviewCardId && cards.some(c => c.id === selectedPreviewCardId)) {
+      loadPreview(selectedPreviewCardId);
+    } else if (cards.length > 0) {
+      selectedPreviewCardId = cards[0].id;
+      localStorage.setItem('fu-preview-selected-id', selectedPreviewCardId);
+      const items = list.querySelectorAll('.list-item');
+      if (items.length > 0) items[0].classList.add('active');
+      loadPreview(selectedPreviewCardId);
+    } else {
+      loadPreview(null);
+    }
+  }
+
+  // 点击列表项进行 Token 绑定 或 切换左侧预览
   list.querySelectorAll('.list-item').forEach(item => {
     item.addEventListener('click', async (e) => {
-      if (e.target.tagName === 'BUTTON') return; // 点击删除按钮不触发绑定
+      if (e.target.classList.contains('delete-btn')) return; // 点击删除按钮不触发绑定/预览
       const cardId = item.dataset.id;
       
       if (!isSdkReady) {
@@ -80,14 +108,15 @@ function renderList() {
         return;
       }
 
-      // 如果不是绑定模式，点击名字是打开卡片预览
+      // 如果不是绑定模式，点击切换预览卡片
       if (!bindTokenId) {
-        OBR.popover.open({
-          id: 'fu-card-preview',
-          url: `${base}/full-card.html?previewCardId=${cardId}&t=${Date.now()}`,
-          width: 620,
-          height: 600
-        });
+        selectedPreviewCardId = cardId;
+        localStorage.setItem('fu-preview-selected-id', cardId);
+        
+        list.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        
+        loadPreview(cardId);
         return;
       }
 
@@ -173,6 +202,10 @@ function deleteCard(event, cardId) {
   event.stopPropagation();
   if (!confirm(`确定要删除角色卡「${cardId}」吗？`)) return;
   localStorage.removeItem(STORAGE_PREFIX + cardId);
+  if (selectedPreviewCardId === cardId) {
+    selectedPreviewCardId = null;
+    localStorage.removeItem('fu-preview-selected-id');
+  }
   renderList();
 }
 // 将删除函数挂载 to window 全局，确保 HTML 中的 onclick 能够正常触发
@@ -261,3 +294,165 @@ excelFile.addEventListener('change', async (e) => {
     excelFile.value = '';
   }
 });
+
+// ---------- 预览卡片渲染逻辑 ----------
+function loadPreview(cardId) {
+  const previewPane = document.getElementById('previewPane');
+  if (!previewPane) return;
+  
+  if (!cardId) {
+    previewPane.innerHTML = `
+      <div class="fu-manager-preview-placeholder">
+        <span style="color:#666;font-size:16px;">👈 请从右侧选择一张角色卡进行预览</span>
+      </div>
+    `;
+    return;
+  }
+  
+  const data = JSON.parse(localStorage.getItem(STORAGE_PREFIX + cardId));
+  if (!data) {
+    previewPane.innerHTML = `
+      <div class="fu-manager-preview-placeholder">
+        <span style="color:#e74c3c;">⚠️ 未找到角色数据</span>
+      </div>
+    `;
+    return;
+  }
+  
+  previewPane.innerHTML = renderPreviewCard(data);
+}
+
+function renderPreviewCard(d) {
+  // 四维属性
+  const attrs = [
+    { label: '敏捷', value: `D${d.dex || 0}` },
+    { label: '洞察', value: `D${d.ins || 0}` },
+    { label: '力量', value: `D${d.mig || 0}` },
+    { label: '意志', value: `D${d.wlp || 0}` },
+  ];
+
+  let attrsHtml = '';
+  attrs.forEach((attr) => {
+    attrsHtml += `
+      <div class="fu-attr-item">
+        <span class="label">${attr.label}</span>
+        <span class="value">${attr.value}</span>
+      </div>
+    `;
+  });
+
+  // 资源条
+  const resources = [
+    { label: 'HP', cur: d.hp, max: d.hpMax, cls: 'resource-hp' },
+    { label: 'MP', cur: d.mp, max: d.mpMax, cls: 'resource-mp' },
+    { label: 'IP', cur: d.ip, max: d.ipMax, cls: 'resource-ip' },
+    { label: '命刻', cur: d.crisisCurrent, max: d.crisisMax, cls: 'resource-crisis' },
+  ];
+
+  let resourcesHtml = '';
+  resources.forEach((res) => {
+    const safeCur = Number(res.cur) || 0;
+    const safeMax = Number(res.max) || 1;
+    const percent = Math.min((safeCur / safeMax) * 100, 100);
+    resourcesHtml += `
+      <div class="resource-row ${res.cls}">
+        <span class="label">${res.label}</span>
+        <div class="bar-wrap">
+          <div class="bar-fill" style="width:${percent}%;"></div>
+          <div class="bar-text">
+            <span>${safeCur}</span>
+            <span style="margin:0 2px;">/</span>
+            <span>${safeMax}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  // 零界能力
+  let crisisHtml = '';
+  if (d.crisisName) {
+    crisisHtml = `
+      <div class="fu-crisis-box">
+        <div class="title">🔥 零界能力</div>
+        <div class="detail">
+          <strong>${d.crisisName || '（未设置）'}</strong>
+          ${d.crisisCondition ? `｜ 条件：${d.crisisCondition}` : ''}
+          ${d.crisisSlots ? `｜ 填充格数：${d.crisisSlots}` : ''}
+        </div>
+      </div>
+    `;
+  } else {
+    crisisHtml = `
+      <div class="fu-crisis-box">
+        <div class="title">🔥 零界能力</div>
+        <div class="detail">（未设置）</div>
+      </div>
+    `;
+  }
+
+  // 防御特性
+  const defenses = [
+    { label: '弱点', value: d.weakness || '无' },
+    { label: '抵抗', value: d.resistance || '无' },
+    { label: '免疫', value: d.immunity || '无' },
+    { label: '吸收', value: d.absorb || '无' },
+  ];
+  let defensesHtml = '';
+  defenses.forEach((def) => {
+    defensesHtml += `<span class="tag"><strong>${def.label}：</strong>${def.value}</span>`;
+  });
+
+  // 武器
+  const weapons = [d.weapon1, d.weapon2];
+  let weaponsHtml = '';
+  weapons.forEach((w) => {
+    if (!w || !w.name || w.name.trim() === '') {
+      weaponsHtml += `<tr class="empty-row"><td colspan="6" style="text-align:center;color:#555;">（无武器）</td></tr>`;
+    } else {
+      weaponsHtml += `
+        <tr>
+          <td>${w.category || '-'}</td>
+          <td class="weapon-name">${w.name}</td>
+          <td>${w.attack || '-'}</td>
+          <td>${w.attr || '-'}</td>
+          <td>${w.type || '-'}</td>
+          <td>${w.damage || '-'}</td>
+        </tr>
+      `;
+    }
+  });
+
+  return `
+    <div class="fu-preview-card-wrapper" style="display:flex; flex-direction:column; height:100%; background:linear-gradient(145deg, #1e1e2f, #14141f); border:1px solid #3a3a55; border-radius:12px; overflow:hidden;">
+      <div class="fu-preview-card-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:rgba(0,0,0,0.3); border-bottom:1px solid #2a2a44; flex-shrink:0;">
+        <div>
+          <span style="font-size:20px;color:#f0c060;">${d.name || '未命名'}</span>
+          <span class="level" style="font-size:13px;background:#2c2c44;padding:2px 12px;border-radius:20px;color:#aab;margin-left:10px;border:1px solid #3a3a55;">Lv.${d.level || 0}</span>
+        </div>
+        <span style="color:#666;font-size:11px;background:#1a1a2e;padding:2px 10px;border-radius:10px;border:1px solid #333;">预览</span>
+      </div>
+      <div class="fu-preview-card-body" style="padding:16px 18px 18px 18px; overflow-y:auto; flex:1;">
+        <!-- 四维 -->
+        <div class="fu-attributes">${attrsHtml}</div>
+        <!-- 战斗 -->
+        <div class="fu-combat-stats">
+          <span>⚔️ 先攻 <span class="num">${d.init || 0}</span></span>
+          <span>🛡️ 物防 <span class="num">${d.pd || 0}</span></span>
+          <span>✨ 魔防 <span class="num">${d.md || 0}</span></span>
+        </div>
+        <!-- 资源 -->
+        ${resourcesHtml}
+        <!-- 零界 -->
+        ${crisisHtml}
+        <!-- 防御 -->
+        <div class="fu-defenses">${defensesHtml}</div>
+        <!-- 武器 -->
+        <table class="fu-weapons">
+          <thead><tr><th>类别</th><th>名称</th><th>检定</th><th>属性</th><th>类型</th><th>伤害</th></tr></thead>
+          <tbody>${weaponsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
