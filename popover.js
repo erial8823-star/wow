@@ -54,8 +54,11 @@ function renderList() {
   cards.forEach(card => {
     html += `
       <div class="list-item" data-id="${card.id}">
-        <span>${card.name} <span class="id">${card.id}</span></span>
-        <button class="btn-import" style="background:#8b2c3a; padding: 2px 6px; font-size:10px;" onclick="deleteCard(event, '${card.id}')">删除</button>
+        <span class="name">${card.name}</span>
+        <div class="id-wrap">
+          <span class="id">${card.id}</span>
+          <span class="delete-btn" title="删除角色卡" onclick="deleteCard(event, '${card.id}')">🗑️</span>
+        </div>
       </div>
     `;
   });

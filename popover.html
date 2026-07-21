@@ -38,26 +38,53 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
     .list-item {
-      padding: 8px 12px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.15s;
-      border: 1px solid transparent;
-      font-size: 13px;
-      color: #ddd;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.15s;
+      border: 1px solid transparent;
+      text-decoration: none;
     }
     .list-item:hover {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255, 255, 255, 0.07);
       border-color: #3a3a5a;
     }
-    .list-item .id { color: #666; font-size: 11px; margin-left: 8px; }
+    .list-item .name {
+      color: #eee;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .list-item .id-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .list-item .id {
+      color: #666;
+      font-size: 11px;
+    }
+    .list-item .delete-btn {
+      color: #666;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0.2;
+      transition: all 0.2s;
+    }
+    .list-item:hover .delete-btn {
+      opacity: 0.7;
+    }
+    .list-item .delete-btn:hover {
+      color: #ff7b89;
+      transform: scale(1.15);
+      opacity: 1;
+    }
     .empty { color: #666; text-align: center; padding: 40px 0; font-size: 14px; }
     .footer {
       margin-top: 12px;
