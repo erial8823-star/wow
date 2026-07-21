@@ -1,5 +1,3 @@
-// background.js - 使用 SDK 注册菜单（无图标）
-
 import OBR from '@owlbear-rodeo/sdk';
 
 console.log('🔥 FU角色卡扩展后台已加载！');
@@ -7,6 +5,9 @@ console.log('🔥 FU角色卡扩展后台已加载！');
 const STORAGE_PREFIX = 'cc-fu-data-';
 const BINDING_KEY = 'fu-binding-';
 const LOCK_KEY = 'fu-lock-';
+
+// 1x1 透明 PNG base64（有效的 URI）
+const ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 function getCardList() {
   const keys = Object.keys(localStorage);
@@ -152,7 +153,7 @@ function bindHpBarToToken(tokenId) {
 }
 
 // ============================================================
-// 使用枭熊2 SDK 注册右键菜单（无图标）
+// 使用枭熊2 SDK 注册右键菜单（base64透明图标）
 // ============================================================
 
 OBR.onReady(() => {
@@ -161,6 +162,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
+      icon: ICON_BASE64,
       label: '📋 绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -189,6 +191,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
+      icon: ICON_BASE64,
       label: '❤️ 绑定FU血条组件',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -209,6 +212,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
+      icon: ICON_BASE64,
       label: '🗑️ 解绑',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -225,7 +229,7 @@ OBR.onReady(() => {
     }
   });
 
-  console.log('✅ 右键菜单已注册（无图标）');
+  console.log('✅ 右键菜单已注册（base64透明图标）');
 });
 
 console.log('✅ background.js 完全加载');
