@@ -1,24 +1,23 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import basicSsl from '@vitejs/plugin-basic-ssl';
 
 export default defineConfig({
-  plugins: [
-    basicSsl()
-  ],
-  server: {
-    https: true,
-    host: true
-  },
   build: {
-    lib: {
-      entry: resolve(__dirname, 'index.js'),
-      name: 'FUCharacterExtension',
-      fileName: () => 'fu-extension.js',
-      formats: ['iife'],
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.js'),
+        background: resolve(__dirname, 'background.js'),
+      },
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
     outDir: 'dist',
     emptyOutDir: true,
     minify: true,
+  },
+  server: {
+    https: true,
+    host: true
   }
 });

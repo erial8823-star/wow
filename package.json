@@ -21,6 +21,7 @@
     "vite": "^8.1.5"
   },
   "dependencies": {
+    "@owlbear-rodeo/sdk": "^3.1.0",
     "xlsx": "^0.18.5"
   }
 }

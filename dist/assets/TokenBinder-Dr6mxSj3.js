@@ -1,0 +1,117 @@
+var e=(e,t,n)=>()=>{if(n)throw n[0];try{return e&&(t=e(e=0)),t}catch(e){throw n=[e],e}},t=(e,t)=>()=>(t||(e((t={exports:{}}).exports,t),e=null),t.exports),n,r,i=e((()=>{n=`cc-fu-data-`,r=class{static save(e,t){try{let r=JSON.stringify(t);return localStorage.setItem(`${n}${e}`,r),console.log(`✅ 角色数据已保存，ID: ${e}`),!0}catch(e){return console.error(`❌ 保存数据失败：`,e),!1}}static load(e){try{let t=localStorage.getItem(`${n}${e}`);if(!t)return console.warn(`⚠️ 未找到 ID 为 ${e} 的数据`),null;let r=JSON.parse(t);return console.log(`📂 已读取角色数据，ID: ${e}`),r}catch(e){return console.error(`❌ 读取数据失败：`,e),null}}static delete(e){try{return localStorage.removeItem(`${n}${e}`),console.log(`🗑️ 已删除角色数据，ID: ${e}`),!0}catch(e){return console.error(`❌ 删除数据失败：`,e),!1}}static listAllIds(){try{let e=Object.keys(localStorage).filter(e=>e.startsWith(n)).map(e=>e.slice(11));return console.log(`📋 共找到 ${e.length} 个已保存的角色:`,e),e}catch(e){return console.error(`❌ 列出数据失败：`,e),[]}}static listSummary(){let e=this.listAllIds(),t=[];for(let n of e){let e=this.load(n);e&&e.name&&t.push({id:n,name:e.name})}return t}}})),a,o=e((()=>{i(),a=class{constructor(e,t,n){this.cardId=e,this.data=t,this.onClose=n||(()=>{}),this.element=null,this.isDragging=!1,this.isResizing=!1,this.dragOffsetX=0,this.dragOffsetY=0,this.resizeStartX=0,this.resizeStartY=0,this.resizeStartWidth=0,this.resizeStartHeight=0,this._onDragMove=this._onDragMove.bind(this),this._onDragEnd=this._onDragEnd.bind(this),this._onResizeMove=this._onResizeMove.bind(this),this._onResizeEnd=this._onResizeEnd.bind(this),this._onCardDataChanged=this._onCardDataChanged.bind(this),document.addEventListener(`fu-card-data-changed`,this._onCardDataChanged)}_onCardDataChanged(e){if(e.detail.cardId===this.cardId){let e=r.load(this.cardId);e&&(this.data=e,this._rerender(),console.log(`🔄 卡片已刷新 (${this.cardId})`))}}_rerender(){if(!this.element)return;let e=this.element.getBoundingClientRect(),t=this.element.style.width||e.width+`px`,n=this.element.style.height||e.height+`px`,r=this.element.style.left||e.left+`px`,i=this.element.style.top||e.top+`px`,a=this.element.style.transform||`none`,o=this.element.parentNode;o&&o.removeChild(this.element),this.render(),this.element.style.width=t,this.element.style.height=n,this.element.style.left=r,this.element.style.top=i,this.element.style.transform=a,o?o.appendChild(this.element):document.body.appendChild(this.element),this._updateFontSize(parseFloat(t)||620)}render(){let e=this.data;this.element=document.createElement(`div`),this.element.className=`fu-full-card`,this.element.innerHTML=`
+      <div class="fu-card-header">
+        <div>
+          <span style="font-size:22px; color:#f0c060;">${e.name||`未命名`}</span>
+          <span class="level">Lv.${e.level||0}</span>
+        </div>
+        <button class="fu-card-close" id="fuCloseBtn">×</button>
+      </div>
+
+      <div class="fu-card-body">
+        <div class="fu-attributes">
+          <div class="fu-attr-item"><span class="label">敏捷</span><span class="value">D${e.dex||0}</span></div>
+          <div class="fu-attr-item"><span class="label">洞察</span><span class="value">D${e.ins||0}</span></div>
+          <div class="fu-attr-item"><span class="label">力量</span><span class="value">D${e.mig||0}</span></div>
+          <div class="fu-attr-item"><span class="label">意志</span><span class="value">D${e.wlp||0}</span></div>
+        </div>
+
+        <div class="fu-combat-stats">
+          <span>⚔️ 先攻 <span class="num fu-editable" data-field="init">${e.init||0}</span></span>
+          <span>🛡️ 物防 <span class="num fu-editable" data-field="pd">${e.pd||0}</span></span>
+          <span>✨ 魔防 <span class="num fu-editable" data-field="md">${e.md||0}</span></span>
+        </div>
+
+        ${this._renderResource(`HP`,e.hp,e.hpMax,`hp`,`resource-hp`)}
+        ${this._renderResource(`MP`,e.mp,e.mpMax,`mp`,`resource-mp`)}
+        ${this._renderResource(`IP`,e.ip,e.ipMax,`ip`,`resource-ip`)}
+        ${this._renderResource(`命刻`,e.crisisCurrent,e.crisisMax,`crisis`,`resource-crisis`)}
+
+        <div class="fu-crisis-box">
+          <div class="title">🔥 零界能力</div>
+          <div class="detail">
+            <strong>${e.crisisName||`（未设置）`}</strong>
+            ${e.crisisCondition?`｜ 条件：${e.crisisCondition}`:``}
+            ${e.crisisSlots?`｜ 填充格数：${e.crisisSlots}`:``}
+          </div>
+        </div>
+
+        <div class="fu-defenses">
+          <span class="tag"><strong>弱点：</strong>${e.weakness||`无`}</span>
+          <span class="tag"><strong>抵抗：</strong>${e.resistance||`无`}</span>
+          <span class="tag"><strong>免疫：</strong>${e.immunity||`无`}</span>
+          <span class="tag"><strong>吸收：</strong>${e.absorb||`无`}</span>
+        </div>
+
+        <table class="fu-weapons">
+          <thead><tr><th>类别</th><th>名称</th><th>检定</th><th>属性</th><th>类型</th><th>伤害</th></tr></thead>
+          <tbody>
+            ${this._renderWeaponRow(e.weapon1)}
+            ${this._renderWeaponRow(e.weapon2)}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="fu-resize-handle" id="fuResizeHandle">↘</div>
+    `;let t=this.element.querySelector(`#fuCloseBtn`);t&&t.addEventListener(`click`,()=>this.close()),this._setupEditableFields();let n=this.element.querySelector(`.fu-card-header`);n&&n.addEventListener(`mousedown`,e=>this._onDragStart(e));let r=this.element.querySelector(`#fuResizeHandle`);return r&&r.addEventListener(`mousedown`,e=>this._onResizeStart(e)),this.element.addEventListener(`selectstart`,e=>e.preventDefault()),this._loadSize(),this.element}_renderResource(e,t,n,r,i){let a=Number(t)||0,o=Number(n)||1;return`
+      <div class="resource-row ${i}">
+        <span class="label">${e}</span>
+        <div class="bar-wrap" data-field="${r}">
+          <div class="bar-fill" style="width:${Math.min(a/o*100,100)}%;"></div>
+          <div class="bar-text">
+            <span class="fu-editable" data-field="${r}Cur">${a}</span>
+            <span style="margin:0 2px;">/</span>
+            <span class="fu-editable" data-field="${r}Max">${o}</span>
+          </div>
+        </div>
+      </div>
+    `}_renderWeaponRow(e){return!e||!e.name||e.name.trim()===``?`<tr class="empty-row"><td colspan="6" style="text-align:center; color:#555;">（无武器）</td></tr>`:`
+      <tr>
+        <td>${e.category||`-`}</td>
+        <td class="weapon-name">${e.name}</td>
+        <td>${e.attack||`-`}</td>
+        <td>${e.attr||`-`}</td>
+        <td>${e.type||`-`}</td>
+        <td>${e.damage||`-`}</td>
+      </tr>
+    `}_setupEditableFields(){this.element.querySelectorAll(`.fu-editable`).forEach(e=>{e.addEventListener(`click`,t=>{t.stopPropagation();let n=e.dataset.field,r=e.textContent.trim(),i=document.createElement(`input`);i.type=`number`,i.className=`fu-editable-input`,i.value=r,i.style.width=`50px`,e.replaceWith(i),i.focus(),i.select(),i.addEventListener(`blur`,()=>{let t=i.value.trim();t===``&&(t=`0`);let r=Number(t);if(isNaN(r)){alert(`请输入有效数字`),i.replaceWith(e);return}this._updateField(n,r),e.textContent=r,i.replaceWith(e)}),i.addEventListener(`keydown`,t=>{t.key===`Enter`&&(t.preventDefault(),i.blur()),t.key===`Escape`&&i.replaceWith(e)})})})}_updateField(e,t){let n=``;if(e===`init`||e===`pd`||e===`md`)n=e;else if(e.endsWith(`Cur`)){let t=e.slice(0,-3);t===`hp`?n=`hp`:t===`mp`?n=`mp`:t===`ip`?n=`ip`:t===`crisis`&&(n=`crisisCurrent`)}else if(e.endsWith(`Max`)){let t=e.slice(0,-3);t===`hp`?n=`hpMax`:t===`mp`?n=`mpMax`:t===`ip`?n=`ipMax`:t===`crisis`&&(n=`crisisMax`)}n&&(this.data[n]=t,r.save(this.cardId,this.data),console.log(`💾 已更新 ${n} = ${t}`),this._updateProgressBars(),document.dispatchEvent(new CustomEvent(`fu-card-data-changed`,{detail:{cardId:this.cardId}})))}_updateProgressBars(){let e=this.data;[{key:`hp`,cur:e.hp,max:e.hpMax,cls:`resource-hp`},{key:`mp`,cur:e.mp,max:e.mpMax,cls:`resource-mp`},{key:`ip`,cur:e.ip,max:e.ipMax,cls:`resource-ip`},{key:`crisis`,cur:e.crisisCurrent,max:e.crisisMax,cls:`resource-crisis`}].forEach(({key:e,cur:t,max:n,cls:r})=>{let i=this.element.querySelector(`.${r}`);if(!i)return;let a=i.querySelector(`.bar-fill`),o=i.querySelector(`.bar-text`);if(a){let e=n>0?Math.min(t/n*100,100):0;a.style.width=`${e}%`}if(o){let r=o.querySelector(`[data-field="${e}Cur"]`),i=o.querySelector(`[data-field="${e}Max"]`);r&&(r.textContent=t),i&&(i.textContent=n)}})}_onDragStart(e){if(e.button!==0||e.target.closest(`.fu-card-close`)||e.target.closest(`input`))return;this.isDragging=!0;let t=this.element.getBoundingClientRect();this.dragOffsetX=e.clientX-t.left,this.dragOffsetY=e.clientY-t.top,this.element.style.transform=`none`,this.element.style.left=t.left+`px`,this.element.style.top=t.top+`px`,document.addEventListener(`mousemove`,this._onDragMove),document.addEventListener(`mouseup`,this._onDragEnd),e.preventDefault()}_onDragMove(e){if(!this.isDragging)return;let t=e.clientX-this.dragOffsetX,n=e.clientY-this.dragOffsetY,r=window.innerWidth-this.element.offsetWidth,i=window.innerHeight-this.element.offsetHeight;this.element.style.left=Math.max(0,Math.min(t,r))+`px`,this.element.style.top=Math.max(0,Math.min(n,i))+`px`}_onDragEnd(e){this.isDragging&&(this.isDragging=!1,document.removeEventListener(`mousemove`,this._onDragMove),document.removeEventListener(`mouseup`,this._onDragEnd))}_onResizeStart(e){e.preventDefault(),e.stopPropagation(),this.isResizing=!0;let t=this.element.getBoundingClientRect();this.resizeStartX=e.clientX,this.resizeStartY=e.clientY,this.resizeStartWidth=t.width,this.resizeStartHeight=t.height,document.addEventListener(`mousemove`,this._onResizeMove),document.addEventListener(`mouseup`,this._onResizeEnd)}_onResizeMove(e){if(!this.isResizing)return;let t=e.clientX-this.resizeStartX,n=e.clientY-this.resizeStartY,r=Math.max(400,this.resizeStartWidth+t),i=Math.max(300,this.resizeStartHeight+n);this.element.style.width=r+`px`,this.element.style.height=i+`px`,this._updateFontSize(r),this._saveSize(r,i)}_onResizeEnd(e){this.isResizing&&(this.isResizing=!1,document.removeEventListener(`mousemove`,this._onResizeMove),document.removeEventListener(`mouseup`,this._onResizeEnd))}_updateFontSize(e){if(!this.element)return;let t=e/620;t=Math.max(.6,Math.min(1.8,t));let n=14*t;this.element.style.fontSize=n+`px`;let r=this.element.querySelector(`.fu-card-header > div > span`);r&&(r.style.fontSize=22*t+`px`),this.element.querySelectorAll(`.fu-attr-item .value`).forEach(e=>{e.style.fontSize=22*t+`px`}),this.element.querySelectorAll(`.fu-combat-stats .num`).forEach(e=>{e.style.fontSize=18*t+`px`}),this.element.querySelectorAll(`.bar-text`).forEach(e=>{e.style.fontSize=13*t+`px`});let i=this.element.querySelector(`.fu-weapons`);i&&(i.style.fontSize=13*t+`px`);let a=this.element.querySelector(`.fu-crisis-box .detail`);a&&(a.style.fontSize=13*t+`px`);let o=this.element.querySelector(`.fu-defenses`);o&&(o.style.fontSize=12*t+`px`)}_saveSize(e,t){let n=`fu-card-size-${this.cardId}`;try{localStorage.setItem(n,JSON.stringify({width:e,height:t}))}catch{}}_loadSize(){let e=`fu-card-size-${this.cardId}`;try{let t=localStorage.getItem(e);if(t){let{width:e,height:n}=JSON.parse(t);this.element.style.width=e+`px`,this.element.style.height=n+`px`,this._updateFontSize(e)}}catch{}}open(){this.element||this.render();let e=document.querySelector(`.fu-full-card`);e&&e.remove(),document.body.appendChild(this.element),localStorage.getItem(`fu-card-size-${this.cardId}`)||setTimeout(()=>{let e=this.element.getBoundingClientRect();e.width>0&&this._updateFontSize(e.width)},50)}close(){this.element?.remove(),document.removeEventListener(`mousemove`,this._onDragMove),document.removeEventListener(`mouseup`,this._onDragEnd),document.removeEventListener(`mousemove`,this._onResizeMove),document.removeEventListener(`mouseup`,this._onResizeEnd),document.removeEventListener(`fu-card-data-changed`,this._onCardDataChanged),this.onClose&&this.onClose()}}})),s,c,l,u=e((()=>{i(),s=`fu-lock-`,c=`fu-hpbar-`,l=class{constructor(e){this.tokenId=e.tokenId,this.tokenElement=e.tokenElement,this.type=e.type,this.cardId=e.cardId||null,this.isRoleCard=e.isRoleCard||!1,this.data=this._initData(e.data),this.container=null,this._animationFrame=null,this._resizeObserver=null,this._mutObserver=null,this.isLocked=this._loadLock(),this.isGM=!0,this._updatePosition=this._updatePosition.bind(this),this._onCardDataChange=this._onCardDataChange.bind(this),document.addEventListener(`fu-card-data-changed`,this._onCardDataChange),this._createContainer(),this._render(),this._startFollowing(),this.show()}_initData(e){if(this.isRoleCard&&this.cardId){let e=r.load(this.cardId);if(e)return{name:e.name||`未命名`,pd:e.pd||0,md:e.md||0,hp:e.hp||0,hpMax:e.hpMax||1,mp:e.mp||0,mpMax:e.mpMax||1}}return this._loadHpBarData()||{name:e?.name||`未命名`,pd:e?.pd||0,md:e?.md||0,hp:e?.hp||0,hpMax:e?.hpMax||1,mp:e?.mp||0,mpMax:e?.mpMax||1}}_loadHpBarData(){let e=`${c}${this.tokenId}`;try{let t=localStorage.getItem(e);if(t)return JSON.parse(t)}catch{}return null}_createContainer(){this.container=document.createElement(`div`),this.container.className=`fu-token-bubble-container`,this.container.style.opacity=`0`,this.container.dataset.tokenId=this.tokenId,document.body.appendChild(this.container)}_createShieldSVG(e,t,n){return`
+      <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" 
+           style="width:20px; height:20px; display:block;">
+        <path d="M14 2L3 7.5v8c0 6.5 11 12.5 11 12.5s11-6 11-12.5v-8L14 2z" 
+              fill="${e}" stroke="${t}" stroke-width="1.5"/>
+        <text x="14" y="18" text-anchor="middle" 
+              font-size="12" font-weight="bold" fill="white"
+              font-family="Arial, sans-serif">${n}</text>
+      </svg>
+    `}_getDisplayValue(e){return this.isLocked&&!this.isGM?`??`:e}_render(){if(!this.container)return;let e=this.data,t=e.hpMax>0?Math.min(e.hp/e.hpMax*100,100):0,n=e.mpMax>0?Math.min(e.mp/e.mpMax*100,100):0,r=this._createShieldSVG(`#3498db`,`#2980b9`,this._getDisplayValue(e.pd)),i=this._createShieldSVG(`#9b59b6`,`#8e44ad`,this._getDisplayValue(e.md)),a=this.isLocked?`🔒`:`🔓`,o=this.isLocked?`已锁定（非GM隐藏数值）`:`未锁定`,s=this._getDisplayValue(e.hp),c=this._getDisplayValue(e.hpMax),l=this._getDisplayValue(e.mp),u=this._getDisplayValue(e.mpMax);this.container.innerHTML=`
+      <div class="fu-bubble-token-layer" id="fuTokenLayer">
+        <div class="fu-bubble-avatar">👤</div>
+        <div class="fu-bubble-shields">
+          <div class="shield-item shield-blue" id="fuShieldPd">${r}</div>
+          <div class="shield-item shield-purple" id="fuShieldMd">${i}</div>
+          <div class="shield-item shield-lock" id="fuLockBtn" title="${o}">${a}</div>
+        </div>
+      </div>
+
+      <div class="fu-bubble-bars">
+        <div class="fu-bubble-bar" id="fuHpBar">
+          <div class="fill hp-fill" style="width:${t}%;"></div>
+          <span class="bar-text">
+            HP 
+            <span class="fu-editable-value" id="fuHpCur">${s}</span>
+            /
+            <span class="fu-editable-value" id="fuHpMax">${c}</span>
+          </span>
+        </div>
+        <div class="fu-bubble-bar" id="fuMpBar">
+          <div class="fill mp-fill" style="width:${n}%;"></div>
+          <span class="bar-text">
+            MP 
+            <span class="fu-editable-value" id="fuMpCur">${l}</span>
+            /
+            <span class="fu-editable-value" id="fuMpMax">${u}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="fu-bubble-name">${e.name||`未命名`}</div>
+    `;let d=this.container.querySelector(`#fuHpCur`);d&&(d.style.cursor=`pointer`,d.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editSingleValue(`hp`,this.data.hp,`HP当前值`)}));let f=this.container.querySelector(`#fuHpMax`);f&&(f.style.cursor=`pointer`,f.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editSingleValue(`hpMax`,this.data.hpMax,`HP最大值`)}));let p=this.container.querySelector(`#fuMpCur`);p&&(p.style.cursor=`pointer`,p.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editSingleValue(`mp`,this.data.mp,`MP当前值`)}));let m=this.container.querySelector(`#fuMpMax`);m&&(m.style.cursor=`pointer`,m.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editSingleValue(`mpMax`,this.data.mpMax,`MP最大值`)}));let h=this.container.querySelector(`#fuShieldPd`);h&&(h.style.cursor=`pointer`,h.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editSingleValue(`pd`,this.data.pd||0,`物防`)}));let g=this.container.querySelector(`#fuShieldMd`);g&&(g.style.cursor=`pointer`,g.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editSingleValue(`md`,this.data.md||0,`魔防`)}));let _=this.container.querySelector(`.fu-bubble-name`);_&&(_.style.cursor=`pointer`,_.style.pointerEvents=`auto`,_.addEventListener(`click`,e=>{if(e.stopPropagation(),this.isLocked&&!this.isGM)return alert(`🔒 已锁定`);this._editName()}));let v=this.container.querySelector(`#fuLockBtn`);v&&v.addEventListener(`click`,e=>{e.stopPropagation(),this._toggleLock()});let y=this.container.querySelector(`#fuTokenLayer`);y&&y.addEventListener(`click`,e=>{e.target.closest(`#fuLockBtn`)||this._openFullCard()}),this._updatePosition()}_editSingleValue(e,t,n){let r=prompt(`输入 ${n}:`,t);if(r===null)return;let i=parseInt(r);if(isNaN(i)||i<0){alert(`请输入有效数字`);return}if(e===`hpMax`&&i<this.data.hp){alert(`HP最大值不能小于当前值`);return}if(e===`mpMax`&&i<this.data.mp){alert(`MP最大值不能小于当前值`);return}if(e===`hp`&&i>this.data.hpMax){alert(`HP当前值不能大于最大值`);return}if(e===`mp`&&i>this.data.mpMax){alert(`MP当前值不能大于最大值`);return}this.data[e]=i,this._saveData(),this._render()}_editName(){let e=prompt(`输入角色名:`,this.data.name||``);if(e===null)return;let t=e.trim();if(!t)return alert(`角色名不能为空`);this.data.name=t,this._saveData(),this._render()}_saveData(){let e=`${c}${this.tokenId}`;if(localStorage.setItem(e,JSON.stringify(this.data)),this.isRoleCard&&this.cardId){let e=r.load(this.cardId);e&&(e.name=this.data.name,e.pd=this.data.pd,e.md=this.data.md,e.hp=this.data.hp,e.hpMax=this.data.hpMax,e.mp=this.data.mp,e.mpMax=this.data.mpMax,r.save(this.cardId,e),document.dispatchEvent(new CustomEvent(`fu-card-data-changed`,{detail:{cardId:this.cardId}})),console.log(`🔄 已同步更新角色卡: ${this.cardId}`))}}_onCardDataChange(e){if(this.isRoleCard&&this.cardId&&e.detail.cardId===this.cardId){let e=r.load(this.cardId);if(e){this.data={name:e.name===void 0?this.data.name:e.name,pd:e.pd===void 0?this.data.pd:e.pd,md:e.md===void 0?this.data.md:e.md,hp:e.hp===void 0?this.data.hp:e.hp,hpMax:e.hpMax===void 0?this.data.hpMax:e.hpMax,mp:e.mp===void 0?this.data.mp:e.mp,mpMax:e.mpMax===void 0?this.data.mpMax:e.mpMax};let t=`${c}${this.tokenId}`;localStorage.setItem(t,JSON.stringify(this.data)),this._render(),this._updatePosition(),console.log(`🔄 气泡已同步角色卡: ${this.cardId}`)}}}_toggleLock(){if(!this.isGM)return alert(`🔒 只有GM可以切换锁状态`);this.isLocked=!this.isLocked,localStorage.setItem(`${s}${this.tokenId}`,JSON.stringify({locked:this.isLocked})),this._render()}_loadLock(){try{let e=localStorage.getItem(`${s}${this.tokenId}`);if(e)return JSON.parse(e).locked||!1}catch{}return!1}setGM(e){this.isGM=e,this._render()}_openFullCard(){this.isRoleCard&&this.cardId?typeof window.testShowCard==`function`&&window.testShowCard(this.cardId):alert(`📊 ${this.data.name}\nHP: ${this.data.hp}/${this.data.hpMax}\nMP: ${this.data.mp}/${this.data.mpMax}\n物防: ${this.data.pd}\n魔防: ${this.data.md}`)}updateData(e){this.data={...this.data,...e},this._render()}getData(){return this.data}_updatePosition(){!this.container||!this.tokenElement||(this._animationFrame&&cancelAnimationFrame(this._animationFrame),this._animationFrame=requestAnimationFrame(()=>{let e=this.tokenElement.getBoundingClientRect(),t=Math.min(e.width,e.height),n=t/56,r=t*1.2,i=t+t*.7,a=e.left+e.width/2-r/2,o=e.top;this.container.style.left=a+`px`,this.container.style.top=o+`px`,this.container.style.width=r+`px`,this.container.style.height=i+`px`,this.container.style.setProperty(`--bubble-scale`,n),this.container.style.opacity=`1`,this._animationFrame=null}))}_startFollowing(){window.ResizeObserver&&(this._resizeObserver=new ResizeObserver(()=>this._updatePosition()),this._resizeObserver.observe(this.tokenElement)),window.addEventListener(`scroll`,this._updatePosition,!0),window.addEventListener(`resize`,this._updatePosition),this._mutObserver=new MutationObserver(()=>this._updatePosition()),this._mutObserver.observe(this.tokenElement,{attributes:!0,attributeFilter:[`style`,`class`,`transform`]})}show(){this.container&&(this.container.classList.add(`visible`),this._updatePosition())}hide(){this.container&&this.container.classList.remove(`visible`)}destroy(){this.hide(),this.container?.remove(),this.container=null,document.removeEventListener(`fu-card-data-changed`,this._onCardDataChange),window.removeEventListener(`scroll`,this._updatePosition,!0),window.removeEventListener(`resize`,this._updatePosition),this._resizeObserver&&this._resizeObserver.disconnect(),this._mutObserver&&this._mutObserver.disconnect(),this._animationFrame&&cancelAnimationFrame(this._animationFrame)}refresh(){this._render(),this._updatePosition()}}})),d,f,p=e((()=>{i(),u(),d=`fu-token-bindings`,f=class{constructor(){this.bindings=new Map,this._loadBindings()}bindRole(e,t,n){this.unbind(e);let i=r.load(n);if(!i)return console.error(`❌ 未找到角色卡 ${n}`),!1;let a=new l({type:`role`,tokenId:e,tokenElement:t,data:i,cardId:n,isRoleCard:!0});return this.bindings.set(e,{type:`role`,cardId:n,tokenElement:t,bubble:a}),this._saveBindings(),console.log(`✅ Token ${e} 已绑定角色卡: ${i.name}`),!0}bindHpBar(e,t,n){this.unbind(e);let r=n||{name:`未命名`,pd:0,md:0,hp:50,hpMax:100,mp:30,mpMax:80},i=new l({type:`hpbar`,tokenId:e,tokenElement:t,data:r,cardId:null,isRoleCard:!1});return this.bindings.set(e,{type:`hpbar`,tokenElement:t,bubble:i,data:r}),this._saveBindings(),console.log(`✅ Token ${e} 已绑定血条组件`),!0}unbind(e){let t=this.bindings.get(e);return t?(t.bubble?.destroy(),this.bindings.delete(e),this._saveBindings(),console.log(`🗑️ Token ${e} 已解绑`),!0):!1}getBinding(e){return this.bindings.get(e)||null}getBubble(e){return this.bindings.get(e)?.bubble||null}updateData(e,t){let n=this.bindings.get(e);return n?(n.bubble?.updateData(t),n.type===`hpbar`&&(n.data=t),this._saveBindings(),!0):!1}_saveBindings(){let e=[];for(let[t,n]of this.bindings)e.push({tokenId:t,type:n.type,cardId:n.cardId||null,data:n.data||null});try{localStorage.setItem(d,JSON.stringify(e))}catch(e){console.warn(`保存绑定关系失败:`,e)}}_loadBindings(){try{let e=localStorage.getItem(d);if(e){let t=JSON.parse(e);console.log(`📂 加载到 ${t.length} 条绑定记录，等待恢复...`),this._savedBindings=t}}catch(e){console.warn(`加载绑定关系失败:`,e)}}restoreAllBindings(e){if(!this._savedBindings||this._savedBindings.length===0)return;let t=0;for(let n of this._savedBindings){let i=e(n.tokenId);if(!i){console.warn(`⚠️ 未找到 Token ${n.tokenId}，跳过恢复`);continue}n.type===`role`&&n.cardId?r.load(n.cardId)&&(this.bindRole(n.tokenId,i,n.cardId),t++):n.type===`hpbar`&&n.data&&(this.bindHpBar(n.tokenId,i,n.data),t++)}console.log(`✅ 恢复了 ${t} 个气泡绑定`)}getSummary(){let e=[];for(let[t,n]of this.bindings)e.push({tokenId:t,type:n.type,name:n.bubble?.getData()?.name||`未命名`});return e}}}));export{r as a,e as c,o as i,p as n,i as o,a as r,t as s,f as t};
