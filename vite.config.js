@@ -9,7 +9,7 @@ export default defineConfig({
       },
       output: {
         entryFileNames: '[name].js',
-        format: 'iife',   // ✅ 关键：打包成 IIFE 格式
+        format: 'iife',
         name: 'FUBackground',
       },
     },
