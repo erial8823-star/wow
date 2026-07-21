@@ -1,0 +1,1 @@
+(function(){console.log(`✅ FU角色卡扩展已加载`)})();

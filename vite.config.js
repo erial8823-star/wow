@@ -5,20 +5,16 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        background: resolve(__dirname, 'background.js'),
+        main: resolve(__dirname, 'index.js'),  // 只保留 index.js
       },
       output: {
         entryFileNames: '[name].js',
         format: 'iife',
-        name: 'FUBackground',
+        name: 'FUExtension',
       },
     },
     outDir: 'dist',
     emptyOutDir: true,
     minify: true,
   },
-  server: {
-    https: true,
-    host: true
-  }
 });
