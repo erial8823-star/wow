@@ -178,33 +178,9 @@ OBR.onReady(() => {
     }
   });
 
-  // 5. 监听玩家选择：点击绑定好的 Token 自动弹窗显示角色卡
-  let lastSelectedTokenId = '';
-  OBR.player.onChange(async (player) => {
-    const selection = player.selection || [];
-    if (selection.length > 0) {
-      const tokenId = selection[0];
-      if (tokenId !== lastSelectedTokenId) {
-        lastSelectedTokenId = tokenId;
-        try {
-          const items = await OBR.scene.items.getItems([tokenId]);
-          if (items.length > 0) {
-            const item = items[0];
-            if (item.type === 'IMAGE' && item.metadata['com.wow.fu-character/data']) {
-              OBR.popover.open({
-                id: 'fu-card-popover',
-                url: `${base}/full-card.html?tokenId=${item.id}&t=${Date.now()}`,
-                width: 620,
-                height: 600
-              });
-            }
-          }
-        } catch (e) {}
-      }
-    } else {
-      lastSelectedTokenId = '';
-    }
-  });
+  // 5. 『选中棋子自动弹出角色卡』监听器已移除
+  // 原因：OBR 中右键点击棋子也会触发 selection 变化，为避免右键菜单与卡片重叠冲突，
+  // 现统一改为通过右键菜单「打开FU角色卡」或左侧栏面板中点击进行查看。
 
   console.log('✅ 右键菜单已成功注册');
 });
