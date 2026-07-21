@@ -129,25 +129,25 @@ function renderList() {
             // 自动更新 Token 的原生 Label（在棋子下方显示血量）
             if (!item.text) {
               item.text = {
-                type: 'PLAIN',
-                plainText: '',
-                richText: [],
+                richText: [{ type: "paragraph", children: [{ text: "" }] }],
+                plainText: "",
                 style: {
-                  fillColor: '#ffffff',
-                  fillOpacity: 1,
-                  strokeColor: '#000000',
-                  strokeOpacity: 1,
-                  strokeWidth: 2,
-                  textAlign: 'CENTER',
-                  textAlignVertical: 'BOTTOM',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontSize: 16,
+                  padding: 8,
+                  fontFamily: "Roboto",
+                  fontSize: 24,
                   fontWeight: 400,
-                  lineHeight: 1.2,
-                  padding: 8
+                  textAlign: "CENTER",
+                  textAlignVertical: "BOTTOM",
+                  fillColor: "white",
+                  fillOpacity: 1,
+                  strokeColor: "white",
+                  strokeOpacity: 1,
+                  strokeWidth: 0,
+                  lineHeight: 1.5,
                 },
-                width: 'AUTO',
-                height: 'AUTO'
+                type: "PLAIN",
+                width: "AUTO",
+                height: "AUTO",
               };
             }
             item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
