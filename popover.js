@@ -80,7 +80,7 @@ function renderList() {
       if (!bindTokenId) {
         OBR.popover.open({
           id: 'fu-card-preview',
-          url: `full-card.html?previewCardId=${cardId}`,
+          url: `/wow/full-card.html?previewCardId=${cardId}`,
           width: 620,
           height: 600
         });
