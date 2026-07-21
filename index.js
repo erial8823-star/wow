@@ -316,3 +316,45 @@ if (isOwlbearEnvironment) {
   console.log('💡 未检测到枭熊2环境，扩展处于待机状态');
   console.log('💡 在枭熊2中加载此扩展将自动激活');
 }
+// 监听来自 popover 窗口的消息
+window.addEventListener('message', function(event) {
+  // 为了安全，可以在这里验证消息来源
+  // if (event.origin !== 'https://erial8823-star.github.io') return;
+
+  const message = event.data;
+  console.log('收到 popover 消息:', message);
+
+  // 处理“导入Excel”请求
+  if (message.type === 'fu-import-excel') {
+    // 触发文件选择
+    const fileInput = document.getElementById('fu-file-input');
+    if (fileInput) {
+      fileInput.click();
+    } else {
+      // 如果页面上还没有文件输入框，动态创建一个
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.xlsx,.xls';
+      input.id = 'fu-file-input';
+      input.style.display = 'none';
+      input.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          // 调用你已有的 Excel 解析函数
+          window.testParseExcel && window.testParseExcel(file);
+        }
+        this.value = ''; // 重置，以便重复选择同一文件
+      });
+      document.body.appendChild(input);
+      input.click();
+    }
+  }
+
+  // 处理“打开卡片”请求
+  if (message.type === 'fu-open-card') {
+    const cardId = message.cardId;
+    if (window.testShowCard) {
+      window.testShowCard(cardId);
+    }
+  }
+});
