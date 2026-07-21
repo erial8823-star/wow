@@ -8,11 +8,14 @@ export default defineConfig({
   ],
   build: {
     rollupOptions: {
-      input: resolve(__dirname, 'background.js'),
+      input: {
+        background: resolve(__dirname, 'background.js'),
+        popover: resolve(__dirname, 'popover.js'),
+        'full-card': resolve(__dirname, 'full-card.js'),
+      },
       output: {
-        entryFileNames: 'background.js',
-        format: 'iife',
-        name: 'FUBackground',
+        entryFileNames: '[name].js',
+        format: 'es',
       },
     },
     outDir: 'dist',

@@ -1,4 +1,4 @@
-import OBR from 'https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm';
+import OBR from '@owlbear-rodeo/sdk';
 
 // 从 URL 解析 tokenId 或 previewCardId
 const urlParams = new URLSearchParams(window.location.search);

@@ -1,4 +1,5 @@
-import OBR from 'https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm';
+import OBR from '@owlbear-rodeo/sdk';
+import * as XLSX from 'xlsx';
 
 const STORAGE_PREFIX = 'cc-fu-data-';
 let isSdkReady = false;
