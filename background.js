@@ -33,7 +33,7 @@ OBR.onReady(() => {
       }
     }],
     onClick: async (context) => {
-      const items = await OBR.scene.items.getSelected();
+      const items = context.items;
       if (items.length === 0) {
         OBR.notification.show('请选择一个棋子 Token');
         return;
@@ -61,7 +61,7 @@ OBR.onReady(() => {
       }
     }],
     onClick: async (context) => {
-      const items = await OBR.scene.items.getSelected();
+      const items = context.items;
       if (items.length === 0) {
         OBR.notification.show('请选择一个棋子 Token');
         return;
@@ -135,7 +135,7 @@ OBR.onReady(() => {
       }
     }],
     onClick: async (context) => {
-      const items = await OBR.scene.items.getSelected();
+      const items = context.items;
       if (items.length === 0) return;
       const token = items[0];
       
@@ -160,7 +160,7 @@ OBR.onReady(() => {
       }
     }],
     onClick: async (context) => {
-      const items = await OBR.scene.items.getSelected();
+      const items = context.items;
       if (items.length === 0) return;
       const token = items[0];
 
