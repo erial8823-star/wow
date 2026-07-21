@@ -6,6 +6,7 @@ let isSdkReady = false;
 const urlParams = new URLSearchParams(window.location.search);
 const bindTokenId = urlParams.get('bindTokenId');
 let bindTokenName = '';
+const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
 // 初始化 OBR SDK
 OBR.onReady(async () => {
@@ -79,7 +80,7 @@ function renderList() {
       if (!bindTokenId) {
         OBR.popover.open({
           id: 'fu-card-preview',
-          url: `/wow/full-card.html?previewCardId=${cardId}`,
+          url: `${base}/full-card.html?previewCardId=${cardId}`,
           width: 620,
           height: 600
         });

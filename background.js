@@ -3,6 +3,7 @@ import OBR from '@owlbear-rodeo/sdk';
 console.log('🔥 FU角色卡扩展后台已加载！');
 
 const STORAGE_PREFIX = 'cc-fu-data-';
+const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
 function getCardList() {
   const keys = Object.keys(localStorage);
@@ -25,7 +26,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '📋 绑定角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
@@ -42,7 +43,7 @@ OBR.onReady(() => {
       // 打开列表选择弹窗进入“绑定模式”
       OBR.popover.open({
         id: 'com.wow.fu-character/popover',
-        url: `/wow/popover.html?bindTokenId=${token.id}`,
+        url: `${base}/popover.html?bindTokenId=${token.id}`,
         width: 400,
         height: 600
       });
@@ -53,7 +54,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '❤️ 绑定FU默认血条',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
@@ -104,7 +105,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '🃏 打开FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }],
@@ -118,7 +119,7 @@ OBR.onReady(() => {
       
       OBR.popover.open({
         id: 'fu-card-popover',
-        url: `/wow/full-card.html?tokenId=${token.id}`,
+        url: `${base}/full-card.html?tokenId=${token.id}`,
         width: 620,
         height: 600
       });
@@ -129,7 +130,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '🗑️ 解除绑定',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }],
@@ -170,7 +171,7 @@ OBR.onReady(() => {
             if (item.type === 'IMAGE' && item.metadata['com.wow.fu-character/data']) {
               OBR.popover.open({
                 id: 'fu-card-popover',
-                url: `/wow/full-card.html?tokenId=${item.id}`,
+                url: `${base}/full-card.html?tokenId=${item.id}`,
                 width: 620,
                 height: 600
               });
