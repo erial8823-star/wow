@@ -25,18 +25,19 @@
       overflow: hidden;
     }
 
-    /* 左栏：预览区 */
+    /* 左栏：预览区 (重写为靠右渲染，边框移至左侧) */
     .fu-manager-left {
       flex: 1;
       padding: 16px;
       overflow: hidden;
       background: #0d0d1a;
-      border-right: 1px solid #2a2a44;
+      border-left: 1px solid #2a2a44 !important;
+      border-right: none !important;
       display: flex;
       flex-direction: column;
     }
 
-    /* 右栏：列表区 */
+    /* 右栏：列表区 (重写为靠左，固定宽度) */
     .fu-manager-right {
       width: 320px;
       padding: 16px;
@@ -150,14 +151,7 @@
 </head>
 <body class="preview-mode collapsed">
   <div class="fu-manager-body">
-    <!-- 左栏：卡片信息预览区 -->
-    <div class="fu-manager-left" id="previewPane">
-      <div class="fu-manager-preview-placeholder">
-        <span style="color:#666;font-size:16px;">👈 请从右侧选择一张角色卡进行预览</span>
-      </div>
-    </div>
-
-    <!-- 右栏：角色卡列表与管理 -->
+    <!-- 左栏：角色卡列表与管理 -->
     <div class="fu-manager-right">
       <div class="header">
         <h2>📋 FU角色卡</h2>
@@ -169,6 +163,13 @@
         <div class="empty">暂无角色卡<br>点击"导入Excel"上传</div>
       </div>
       <div class="footer" id="statusBar">正在初始化 SDK...</div>
+    </div>
+
+    <!-- 右栏：卡片信息预览区 -->
+    <div class="fu-manager-left" id="previewPane">
+      <div class="fu-manager-preview-placeholder">
+        <span style="color:#666;font-size:16px;">👈 请从左侧选择一张角色卡进行预览</span>
+      </div>
     </div>
   </div>
 
