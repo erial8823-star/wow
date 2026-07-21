@@ -48,6 +48,7 @@
   const importBtn = document.getElementById('importBtn');
   if (importBtn) {
     importBtn.addEventListener('click', function() {
+      console.log('📤 popover 发送导入请求');
       window.parent.postMessage({ type: 'fu-import-excel' }, '*');
     });
   }

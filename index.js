@@ -1,4 +1,4 @@
-// index.js - 扩展主入口（枭熊2集成版）
+// index.js - 扩展主入口（回退版）
 
 // ============================================================
 // 1. 导入样式文件
@@ -25,7 +25,6 @@ console.log('🎉 FU角色卡扩展加载成功了！');
 // ============================================================
 // 4. 测试函数（仅在开发环境可用）
 // ============================================================
-// 检测是否在 test.html 中运行
 const isTestEnvironment = window.location.pathname.includes('test.html') || 
                           document.querySelector('#fileInput') !== null;
 
@@ -117,8 +116,6 @@ if (isTestEnvironment) {
     console.log('📋 角色卡管理界面已打开');
   };
 
-  // TokenBinder 测试
-  let __testBinder = null;
   window.__tokenBinder = null;
 
   window.testCreateToken = (cardId) => {
@@ -310,7 +307,6 @@ if (isOwlbearEnvironment) {
   console.log('🦉 检测到枭熊2环境，启动集成模块...');
   const integration = new OwlbearIntegration();
   integration.init();
-  // 暴露到全局以便调试
   window.__fuIntegration = integration;
 } else if (!isTestEnvironment) {
   console.log('💡 未检测到枭熊2环境，扩展处于待机状态');
@@ -318,16 +314,12 @@ if (isOwlbearEnvironment) {
 }
 
 // ============================================================
-// 6. 监听 popover 窗口发来的消息（修复语法错误）
+// 6. 监听 popover 窗口发来的消息
 // ============================================================
 window.addEventListener('message', function(event) {
-  // 安全验证：只接受来自我们自己 popover 的消息
-  // if (event.origin !== 'https://erial8823-star.github.io') return;
-
   const message = event.data;
   console.log('📨 收到消息:', message);
 
-  // 处理：导入Excel
   if (message.type === 'fu-import-excel') {
     console.log('📂 触发导入Excel');
     let fileInput = document.getElementById('fu-file-input');
@@ -358,16 +350,14 @@ window.addEventListener('message', function(event) {
     fileInput.click();
   }
 
-  // 处理：打开卡片
   if (message.type === 'fu-open-card') {
     const cardId = message.cardId;
     console.log('🃏 打开卡片:', cardId);
     if (typeof window.testShowCard === 'function') {
       window.testShowCard(cardId);
     } else {
-      // 直接加载卡片（修复语法错误：先检查 FullCard 是否可用）
       const data = DataManager.load(cardId);
-      if (data && typeof FullCard !== 'undefined') {
+      if (data) {
         const card = new FullCard(cardId, data, () => {});
         card.open();
       }
