@@ -111,6 +111,7 @@
       list.querySelectorAll('.list-item').forEach(item => {
         item.addEventListener('click', () => {
           const cardId = item.dataset.id;
+          // 发送消息到主页面（background.js 会监听）
           window.parent.postMessage({
             type: 'fu-open-card',
             cardId: cardId
@@ -131,28 +132,46 @@
   </script>
 
   <!-- ============================================================
-  手动加载 background.js（解决枭熊2不自动加载的问题）
+  手动加载 background.js 并注入到枭熊2主页面
   ============================================================ -->
   <script>
     (function() {
-      // 检查是否已经加载过，避免重复加载
+      // 检查是否已经加载过
       if (window.__fu_background_loaded) {
         console.log('⚠️ background.js 已经加载过了');
         return;
       }
 
-      console.log('📦 正在手动加载 background.js...');
+      console.log('📦 正在获取 background.js...');
 
-      const script = document.createElement('script');
-      script.src = 'https://erial8823-star.github.io/wow/dist/background.js';
-      script.onload = function() {
-        console.log('✅ background.js 手动加载成功！');
-        window.__fu_background_loaded = true;
-      };
-      script.onerror = function() {
-        console.error('❌ background.js 加载失败！');
-      };
-      document.head.appendChild(script);
+      fetch('https://erial8823-star.github.io/wow/dist/background.js')
+        .then(response => response.text())
+        .then(code => {
+          console.log('📝 获取到代码，长度:', code.length);
+          console.log('📦 正在注入到主页面...');
+
+          try {
+            // 通过 window.parent 将代码注入到主页面执行
+            const parentWindow = window.parent;
+            const func = new parentWindow.Function(code);
+            func();
+            console.log('✅ background.js 已注入到主页面！');
+            window.__fu_background_loaded = true;
+          } catch (err) {
+            console.error('❌ 注入失败:', err);
+            // 备用方案：使用 eval
+            try {
+              window.parent.eval(code);
+              console.log('✅ 使用 eval 注入成功');
+              window.__fu_background_loaded = true;
+            } catch (e2) {
+              console.error('❌ eval 注入也失败:', e2);
+            }
+          }
+        })
+        .catch(err => {
+          console.error('❌ 获取 background.js 失败:', err);
+        });
     })();
   </script>
 </body>
