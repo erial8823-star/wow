@@ -1,4 +1,4 @@
-// background.js - 使用内联 SVG 图标（不需要外部图片）
+// background.js - 使用 assets/icon.png 作为图标
 
 import OBR from '@owlbear-rodeo/sdk';
 
@@ -7,15 +7,8 @@ console.log('🔥 FU角色卡扩展后台已加载！');
 const STORAGE_PREFIX = 'cc-fu-data-';
 const BINDING_KEY = 'fu-binding-';
 
-// ✅ 使用内联 SVG 作为图标（不需要任何外部图片文件）
-const ICON_SVG = 'data:image/svg+xml,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f0c060" stroke-width="2">
-    <rect x="2" y="4" width="20" height="16" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
-    <line x1="8" y1="8" x2="16" y2="8" stroke="white" stroke-width="1.5"/>
-    <line x1="8" y1="12" x2="14" y2="12" stroke="white" stroke-width="1.5"/>
-    <line x1="8" y1="16" x2="16" y2="16" stroke="white" stroke-width="1.5"/>
-  </svg>
-`);
+// ✅ 使用你已有的图标图片
+const ICON_URL = 'https://erial8823-star.github.io/wow/assets/icon.png';
 
 function getCardList() {
   const keys = Object.keys(localStorage);
@@ -162,7 +155,7 @@ function bindHpBarToToken(tokenId) {
 }
 
 // ============================================================
-// 使用枭熊2 SDK 注册右键菜单（使用内联 SVG 图标）
+// 使用枭熊2 SDK 注册右键菜单（使用图片 URL）
 // ============================================================
 
 OBR.onReady(() => {
@@ -171,7 +164,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
-      icon: ICON_SVG,  // ✅ 使用内联 SVG
+      icon: ICON_URL,  // ✅ 使用图片 URL
       label: '绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -200,7 +193,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
-      icon: ICON_SVG,
+      icon: ICON_URL,
       label: '绑定FU血条组件',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -221,7 +214,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
-      icon: ICON_SVG,
+      icon: ICON_URL,
       label: '解绑',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
