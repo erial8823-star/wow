@@ -6,9 +6,6 @@ const STORAGE_PREFIX = 'cc-fu-data-';
 const BINDING_KEY = 'fu-binding-';
 const LOCK_KEY = 'fu-lock-';
 
-// 16x16 金色 PNG base64
-const ICON_16x16_GOLD = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAN0lEQVQ4jWNgYGD4z8A0MDAwMDAwMFDqPwMDwwkGBoYrDAwM1xCGYv8ZGBh+MjAw/CeG/wDAJi6HAUOVicQAAAAASUVORK5CYII=';
-
 function getCardList() {
   const keys = Object.keys(localStorage);
   const ourKeys = keys.filter(k => k.startsWith(STORAGE_PREFIX));
@@ -32,7 +29,6 @@ function findTokenElement(tokenId) {
 // ============================================================
 
 function injectBubble(tokenId, tokenEl, data, cardId) {
-  // 移除旧气泡
   const oldContainer = document.querySelector(`.fu-token-bubble-container[data-token-id="${tokenId}"]`);
   if (oldContainer) oldContainer.remove();
 
@@ -142,23 +138,44 @@ function injectBubble(tokenId, tokenEl, data, cardId) {
   return container;
 }
 
+// ============================================================
+// 绑定函数
+// ============================================================
+
 function bindRoleToToken(tokenId, cardId) {
   const tokenEl = findTokenElement(tokenId);
-  if (!tokenEl) return;
+  if (!tokenEl) {
+    console.warn('未找到Token元素:', tokenId);
+    return;
+  }
   const data = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${cardId}`));
-  if (!data) return;
+  if (!data) {
+    console.warn('未找到卡片数据:', cardId);
+    return;
+  }
   injectBubble(tokenId, tokenEl, data, cardId);
 }
 
 function bindHpBarToToken(tokenId) {
   const tokenEl = findTokenElement(tokenId);
-  if (!tokenEl) return;
-  const data = { name: '测试勇士', pd: 8, md: 12, hp: 75, hpMax: 100, mp: 40, mpMax: 80 };
+  if (!tokenEl) {
+    console.warn('未找到Token元素:', tokenId);
+    return;
+  }
+  const data = {
+    name: '测试勇士',
+    pd: 8,
+    md: 12,
+    hp: 75,
+    hpMax: 100,
+    mp: 40,
+    mpMax: 80,
+  };
   injectBubble(tokenId, tokenEl, data, null);
 }
 
 // ============================================================
-// 使用枭熊2 SDK 注册右键菜单（16x16 金色图标）
+// 使用枭熊2 SDK 注册右键菜单（彻底无图标）
 // ============================================================
 
 OBR.onReady(() => {
@@ -168,7 +185,6 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
-      icon: ICON_16x16_GOLD,
       label: '📋 绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -196,7 +212,6 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
-      icon: ICON_16x16_GOLD,
       label: '❤️ 绑定FU血条组件',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -218,7 +233,6 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
-      icon: ICON_16x16_GOLD,
       label: '🗑️ 解绑',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -235,7 +249,7 @@ OBR.onReady(() => {
     }
   });
 
-  console.log('✅ 右键菜单已注册（16x16 图标）');
+  console.log('✅ 右键菜单已注册（无图标）');
 });
 
 console.log('✅ background.js 完全加载');
