@@ -1,0 +1,509 @@
+/* styles/main.css - 全屏大卡片完整样式（含管理界面） */
+
+.fu-full-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 620px;
+  max-height: 85vh;
+  background: linear-gradient(145deg, #1e1e2f, #14141f);
+  border: 2px solid #f0c060;
+  border-radius: 20px;
+  padding: 0;
+  color: #e8e6f0;
+  z-index: 10000;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(240, 192, 96, 0.15);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- 头部 ---- */
+.fu-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid #f0c060;
+  border-radius: 20px 20px 0 0;
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+.fu-card-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f5d77b, #e8b84c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.fu-card-header .level {
+  font-size: 14px;
+  background: #2c2c44;
+  padding: 2px 14px;
+  border-radius: 20px;
+  color: #aab;
+  margin-left: 12px;
+  border: 1px solid #3a3a55;
+}
+.fu-card-close {
+  background: none;
+  border: none;
+  color: #6a6a8a;
+  font-size: 28px;
+  cursor: pointer;
+  transition: 0.2s;
+  padding: 0 8px;
+}
+.fu-card-close:hover { color: #ff7b89; transform: rotate(90deg); }
+
+/* ---- 卡片主体（可滚动区域） ---- */
+.fu-card-body {
+  padding: 24px 28px 28px 28px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---- 滚动条样式（金色主题） ---- */
+.fu-card-body::-webkit-scrollbar {
+  width: 6px;
+}
+.fu-card-body::-webkit-scrollbar-track {
+  background: #1a1a2e;
+  border-radius: 3px;
+}
+.fu-card-body::-webkit-scrollbar-thumb {
+  background: #f0c060;
+  border-radius: 3px;
+}
+.fu-card-body::-webkit-scrollbar-thumb:hover {
+  background: #f5d77b;
+}
+
+/* ---- 四维属性（2行2列） ---- */
+.fu-attributes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.fu-attr-item {
+  text-align: center;
+  padding: 10px 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid #2e2e44;
+  backdrop-filter: blur(2px);
+  transition: 0.2s;
+}
+.fu-attr-item:hover { background: rgba(255, 255, 255, 0.08); border-color: #f0c060; }
+.fu-attr-item .label { font-size: 11px; color: #8888aa; display: block; letter-spacing: 1px; text-transform: uppercase; }
+.fu-attr-item .value { font-size: 22px; font-weight: bold; color: #d4d0f0; font-family: monospace; }
+
+/* ---- 战斗数据 ---- */
+.fu-combat-stats {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 1px solid #2a2a40;
+}
+.fu-combat-stats span {
+  font-size: 14px;
+  color: #b0b0d0;
+}
+.fu-combat-stats .num {
+  color: #f5d77b;
+  font-weight: bold;
+  font-size: 18px;
+  margin-left: 4px;
+}
+
+/* ---- 资源进度条（长条） ---- */
+.resource-row {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+.resource-row .label {
+  display: inline-block;
+  width: 60px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #c0c0dd;
+  flex-shrink: 0;
+}
+.resource-row .bar-wrap {
+  display: inline-block;
+  flex: 1;
+  height: 26px;
+  background: #1c1c2e;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid #33334d;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+.resource-row .bar-fill {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.25s ease;
+  min-width: 6px;
+}
+.resource-row .bar-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+}
+.resource-hp .bar-fill { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+.resource-mp .bar-fill { background: linear-gradient(90deg, #2471a3, #5dade2); }
+.resource-ip .bar-fill { background: linear-gradient(90deg, #6c3483, #af7ac5); }
+.resource-crisis .bar-fill { background: linear-gradient(90deg, #d4ac0d, #f1c40f); }
+
+/* ---- 零界能力 ---- */
+.fu-crisis-box {
+  background: rgba(241, 196, 15, 0.06);
+  border-left: 3px solid #f1c40f;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.fu-crisis-box .title {
+  color: #f1c40f;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.fu-crisis-box .detail {
+  font-size: 13px;
+  color: #c8c8e0;
+  margin-top: 4px;
+}
+.fu-crisis-box .detail strong {
+  color: #f5e08a;
+}
+
+/* ---- 防御特性 ---- */
+.fu-defenses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-bottom: 18px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+.fu-defenses .tag {
+  font-size: 12px;
+  color: #a0a0c0;
+}
+.fu-defenses .tag strong {
+  color: #d0d0ee;
+  font-weight: 600;
+}
+
+/* ---- 武器表格 ---- */
+.fu-weapons {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.fu-weapons th {
+  text-align: left;
+  color: #7a7a9a;
+  font-weight: 500;
+  font-size: 11px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #2a2a44;
+  letter-spacing: 0.5px;
+}
+.fu-weapons td {
+  padding: 7px 4px;
+  border-bottom: 1px solid #1e1e32;
+  color: #d0d0e8;
+}
+.fu-weapons .weapon-name {
+  color: #f5d77b;
+  font-weight: 600;
+}
+.fu-weapons .empty-row td {
+  color: #5a5a7a;
+  font-style: italic;
+}
+
+/* ---- 可编辑数字 ---- */
+.fu-editable {
+  cursor: pointer;
+  padding: 0 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+  display: inline-block;
+}
+.fu-editable:hover {
+  background: rgba(255, 215, 0, 0.15);
+}
+.fu-editable-input {
+  background: #0d0d1a;
+  border: 1px solid #f5d77b;
+  color: #fff;
+  width: 50px;
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-align: center;
+  font-size: inherit;
+  font-weight: bold;
+  box-shadow: 0 0 15px rgba(245, 215, 123, 0.1);
+}
+
+/* ========== 缩放手柄 ========== */
+.fu-resize-handle {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  cursor: nwse-resize;
+  color: #f0c060;
+  font-size: 18px;
+  line-height: 24px;
+  text-align: center;
+  user-select: none;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  z-index: 10001;
+}
+.fu-resize-handle:hover {
+  opacity: 1;
+  color: #fff;
+}
+
+/* ============================================================
+   角色卡管理界面（左右两栏）
+   ============================================================ */
+
+/* ---- 遮罩层 ---- */
+.fu-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- 主容器 ---- */
+.fu-manager-container {
+  width: 85vw;
+  max-width: 1200px;
+  height: 80vh;
+  max-height: 800px;
+  background: #1a1a2e;
+  border: 2px solid #f0c060;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+}
+
+/* ---- 头部 ---- */
+.fu-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid #2a2a44;
+  flex-shrink: 0;
+}
+.fu-manager-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f0c060;
+}
+.fu-manager-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: 0.2s;
+}
+.fu-manager-close:hover {
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+/* ---- 主体（左右两栏） ---- */
+.fu-manager-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ---- 左栏：预览区 ---- */
+.fu-manager-left {
+  flex: 1;
+  padding: 16px;
+  overflow: hidden;
+  background: #0d0d1a;
+  border-right: 1px solid #2a2a44;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- 预览占位符 ---- */
+.fu-manager-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: #555;
+  font-size: 16px;
+  flex-direction: column;
+}
+
+/* ---- 预览卡片（可滚动） ---- */
+.fu-preview-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(145deg, #1e1e2f, #14141f);
+  border: 1px solid #3a3a55;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.fu-preview-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid #2a2a44;
+  flex-shrink: 0;
+}
+
+.fu-preview-card-body {
+  padding: 16px 18px 18px 18px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 预览卡片内的元素不可交互 */
+.fu-preview-card-wrapper .fu-editable {
+  cursor: default !important;
+  pointer-events: none !important;
+}
+.fu-preview-card-wrapper .fu-editable:hover {
+  background: transparent !important;
+}
+.fu-preview-card-wrapper .fu-card-close {
+  display: none !important;
+}
+.fu-preview-card-wrapper .fu-card-header {
+  cursor: default !important;
+}
+.fu-preview-card-wrapper .bar-wrap {
+  cursor: default !important;
+}
+
+/* 预览卡片内的滚动条 */
+.fu-preview-card-body::-webkit-scrollbar {
+  width: 4px;
+}
+.fu-preview-card-body::-webkit-scrollbar-track {
+  background: #0d0d1a;
+  border-radius: 2px;
+}
+.fu-preview-card-body::-webkit-scrollbar-thumb {
+  background: #f0c060;
+  border-radius: 2px;
+}
+
+/* ---- 右栏：列表区 ---- */
+.fu-manager-right {
+  width: 280px;
+  min-width: 200px;
+  padding: 12px;
+  overflow-y: auto;
+  background: #14142a;
+  flex-shrink: 0;
+}
+
+/* ---- 列表容器 ---- */
+.fu-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ---- 列表项 ---- */
+.fu-manager-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.15s;
+  border: 1px solid transparent;
+}
+.fu-manager-list-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: #3a3a5a;
+}
+.fu-manager-list-item.active {
+  background: rgba(240, 192, 96, 0.12);
+  border-color: #f0c060;
+}
+.fu-manager-list-item .fu-manager-list-name {
+  color: #eee;
+  font-size: 14px;
+  font-weight: 500;
+}
+.fu-manager-list-item .fu-manager-list-id {
+  color: #666;
+  font-size: 11px;
+}
+
+/* ---- 空状态 ---- */
+.fu-manager-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #555;
+  font-size: 14px;
+  gap: 8px;
+}
