@@ -6,6 +6,9 @@ const STORAGE_PREFIX = 'cc-fu-data-';
 const BINDING_KEY = 'fu-binding-';
 const LOCK_KEY = 'fu-lock-';
 
+// 1x1 透明 PNG base64（有效的 URI）
+const ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
 function getCardList() {
   const keys = Object.keys(localStorage);
   const ourKeys = keys.filter(k => k.startsWith(STORAGE_PREFIX));
@@ -23,10 +26,6 @@ function getCardList() {
 function findTokenElement(tokenId) {
   return document.querySelector(`[data-token-id="${tokenId}"]`);
 }
-
-// ============================================================
-// 完整的气泡注入函数
-// ============================================================
 
 function injectBubble(tokenId, tokenEl, data, cardId) {
   const oldContainer = document.querySelector(`.fu-token-bubble-container[data-token-id="${tokenId}"]`);
@@ -138,53 +137,32 @@ function injectBubble(tokenId, tokenEl, data, cardId) {
   return container;
 }
 
-// ============================================================
-// 绑定函数
-// ============================================================
-
 function bindRoleToToken(tokenId, cardId) {
   const tokenEl = findTokenElement(tokenId);
-  if (!tokenEl) {
-    console.warn('未找到Token元素:', tokenId);
-    return;
-  }
+  if (!tokenEl) return;
   const data = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${cardId}`));
-  if (!data) {
-    console.warn('未找到卡片数据:', cardId);
-    return;
-  }
+  if (!data) return;
   injectBubble(tokenId, tokenEl, data, cardId);
 }
 
 function bindHpBarToToken(tokenId) {
   const tokenEl = findTokenElement(tokenId);
-  if (!tokenEl) {
-    console.warn('未找到Token元素:', tokenId);
-    return;
-  }
-  const data = {
-    name: '测试勇士',
-    pd: 8,
-    md: 12,
-    hp: 75,
-    hpMax: 100,
-    mp: 40,
-    mpMax: 80,
-  };
+  if (!tokenEl) return;
+  const data = { name: '测试勇士', pd: 8, md: 12, hp: 75, hpMax: 100, mp: 40, mpMax: 80 };
   injectBubble(tokenId, tokenEl, data, null);
 }
 
 // ============================================================
-// 使用枭熊2 SDK 注册右键菜单（彻底无图标）
+// 使用枭熊2 SDK 注册右键菜单（base64透明图标）
 // ============================================================
 
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // 绑定角色卡
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
+      icon: ICON_BASE64,
       label: '📋 绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -196,11 +174,13 @@ OBR.onReady(() => {
         OBR.notification.show('暂无角色卡，请先导入');
         return;
       }
+
       const items = await OBR.scene.items.getSelected();
       if (items.length === 0) {
         OBR.notification.show('请先选择一个Token');
         return;
       }
+
       const token = items[0];
       const cardId = cards[0].id;
       bindRoleToToken(token.id, cardId);
@@ -208,10 +188,10 @@ OBR.onReady(() => {
     }
   });
 
-  // 绑定血条组件
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
+      icon: ICON_BASE64,
       label: '❤️ 绑定FU血条组件',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -229,10 +209,10 @@ OBR.onReady(() => {
     }
   });
 
-  // 解绑
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
+      icon: ICON_BASE64,
       label: '🗑️ 解绑',
       filter: {
         every: [{ key: 'type', value: 'TOKEN' }]
@@ -249,7 +229,7 @@ OBR.onReady(() => {
     }
   });
 
-  console.log('✅ 右键菜单已注册（无图标）');
+  console.log('✅ 右键菜单已注册（base64透明图标）');
 });
 
 console.log('✅ background.js 完全加载');
