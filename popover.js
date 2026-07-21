@@ -128,9 +128,30 @@ function renderList() {
             
             // 自动更新 Token 的原生 Label（在棋子下方显示血量）
             if (!item.text) {
-              item.text = { plainText: '', richText: [], style: { fillColor: '#FFFFFF', fillOpacity: 1, strokeColor: '#000000', strokeOpacity: 1, strokeWidth: 0, textAlign: 'CENTER', textAlignVertical: 'BOTTOM', fontSize: 16, fontWeight: 600, lineHeight: 1.2, padding: 4 }, type: 'LABEL', width: 'AUTO', height: 'AUTO' };
+              item.text = {
+                type: 'PLAIN',
+                plainText: '',
+                richText: [],
+                style: {
+                  fillColor: '#ffffff',
+                  fillOpacity: 1,
+                  strokeColor: '#000000',
+                  strokeOpacity: 1,
+                  strokeWidth: 2,
+                  textAlign: 'CENTER',
+                  textAlignVertical: 'BOTTOM',
+                  fontFamily: 'Roboto, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  lineHeight: 1.2,
+                  padding: 8
+                },
+                width: 'AUTO',
+                height: 'AUTO'
+              };
             }
             item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            item.textItemType = 'LABEL';
           }
         }
       });

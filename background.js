@@ -26,7 +26,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '📋 绑定角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
@@ -54,7 +54,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '❤️ 绑定FU默认血条',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
@@ -91,11 +91,31 @@ OBR.onReady(() => {
         for (let item of items) {
           if (item.type === 'IMAGE') {
             item.metadata['com.wow.fu-character/data'] = data;
-            // 如果 item.text 不存在，先初始化它
             if (!item.text) {
-              item.text = { plainText: '', richText: [], style: { fillColor: '#FFFFFF', fillOpacity: 1, strokeColor: '#000000', strokeOpacity: 1, strokeWidth: 0, textAlign: 'CENTER', textAlignVertical: 'BOTTOM', fontSize: 16, fontWeight: 600, lineHeight: 1.2, padding: 4 }, type: 'LABEL', width: 'AUTO', height: 'AUTO' };
+              item.text = {
+                type: 'PLAIN',
+                plainText: '',
+                richText: [],
+                style: {
+                  fillColor: '#ffffff',
+                  fillOpacity: 1,
+                  strokeColor: '#000000',
+                  strokeOpacity: 1,
+                  strokeWidth: 2,
+                  textAlign: 'CENTER',
+                  textAlignVertical: 'BOTTOM',
+                  fontFamily: 'Roboto, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  lineHeight: 1.2,
+                  padding: 8
+                },
+                width: 'AUTO',
+                height: 'AUTO'
+              };
             }
             item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            item.textItemType = 'LABEL';
           }
         }
       });
@@ -107,7 +127,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '🃏 打开FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }],
@@ -132,7 +152,7 @@ OBR.onReady(() => {
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
-      icon: '/wow/assets/icon.png',
+      icon: `${base}/assets/icon.png`,
       label: '🗑️ 解除绑定',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }],
