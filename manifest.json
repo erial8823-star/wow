@@ -4,12 +4,12 @@
   "manifest_version": 1,
   "author": "你的名字",
   "description": "支持Excel导入的FU规则角色卡，含全屏卡片与Token悬浮气泡",
-  "icon": "/test-wow/assets/icon.png",
-  "background_url": "/test-wow/background.html",
+  "icon": "/wow/assets/icon.png",
+  "background_url": "/wow/background.html",
   "action": {
     "title": "FU角色卡",
-    "icon": "/test-wow/assets/icon.png",
-    "popover": "/test-wow/popover.html",
+    "icon": "/wow/assets/icon.png",
+    "popover": "/wow/popover.html",
     "height": 600,
     "width": 400
   }

@@ -151,7 +151,7 @@ OBR.onReady(() => {
       
       OBR.popover.open({
         id: 'fu-card-popover',
-        url: `/test-wow/full-card.html?tokenId=${token.id}`,
+        url: `/wow/full-card.html?tokenId=${token.id}`,
         width: 620,
         height: 600
       });
