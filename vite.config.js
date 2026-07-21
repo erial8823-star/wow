@@ -5,11 +5,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.js'),
         background: resolve(__dirname, 'background.js'),
       },
       output: {
         entryFileNames: '[name].js',
+        format: 'iife',   // ✅ 关键：打包成 IIFE 格式
+        name: 'FUBackground',
       },
     },
     outDir: 'dist',
