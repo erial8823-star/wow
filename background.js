@@ -90,7 +90,9 @@ OBR.onReady(() => {
         for (let item of items) {
           if (item.type === 'IMAGE') {
             item.metadata['com.wow.fu-character/data'] = data;
-            item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            if (item.text) {
+              item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            }
           }
         }
       });
@@ -143,7 +145,9 @@ OBR.onReady(() => {
         for (let item of items) {
           if (item.type === 'IMAGE') {
             delete item.metadata['com.wow.fu-character/data'];
-            item.text.plainText = item.name || '';
+            if (item.text) {
+              item.text.plainText = item.name || '';
+            }
           }
         }
       });

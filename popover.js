@@ -58,7 +58,11 @@ function renderList() {
     `;
   });
   list.innerHTML = html;
-  document.getElementById('statusBar').textContent = `共 ${cards.length} 张角色卡｜选中 Token 棋子后点击列表可绑定`;
+  if (bindTokenId) {
+    document.getElementById('statusBar').textContent = `正在为棋子「${bindTokenName}」选择绑定角色卡...`;
+  } else {
+    document.getElementById('statusBar').textContent = `共 ${cards.length} 张角色卡｜点击卡片预览，右键棋子绑定`;
+  }
 
   // 点击列表项进行 Token 绑定 或 打开预览
   list.querySelectorAll('.list-item').forEach(item => {
@@ -122,7 +126,9 @@ function renderList() {
             };
             
             // 自动更新 Token 的原生 Label（在棋子下方显示血量）
-            item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            if (item.text) {
+              item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            }
           }
         }
       });
