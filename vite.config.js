@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     basicSsl()
   ],
+  base: './',  // ← 添加这一行，让构建产物使用相对路径
   build: {
     rollupOptions: {
       input: {
