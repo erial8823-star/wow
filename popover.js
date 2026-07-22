@@ -2,6 +2,8 @@ import OBR from '@owlbear-rodeo/sdk';
 import * as XLSX from 'xlsx';
 
 const STORAGE_PREFIX = 'cc-fu-data-';
+const BINDING_KEY = 'fu-binding-';
+const LOCK_KEY = 'fu-lock-';
 let isSdkReady = false;
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -11,7 +13,6 @@ const base = window.location.href.substring(0, window.location.href.lastIndexOf(
 
 let selectedPreviewCardId = localStorage.getItem('fu-preview-selected-id') || null;
 
-// 根据当前模式设置 Body 类名
 if (bindTokenId) {
   document.body.classList.add('bind-mode');
   document.body.classList.remove('preview-mode');
@@ -20,7 +21,6 @@ if (bindTokenId) {
   document.body.classList.remove('bind-mode');
 }
 
-// 初始化 OBR SDK
 OBR.onReady(async () => {
   isSdkReady = true;
   if (bindTokenId) {
@@ -37,7 +37,6 @@ OBR.onReady(async () => {
   renderList();
 });
 
-// 读取所有本地保存的角色卡列表
 function getCardList() {
   const keys = Object.keys(localStorage);
   const ourKeys = keys.filter(k => k.startsWith(STORAGE_PREFIX));
@@ -52,7 +51,6 @@ function getCardList() {
   });
 }
 
-// 渲染角色卡列表
 function renderList() {
   const list = document.getElementById('cardList');
   const cards = getCardList();
@@ -82,7 +80,6 @@ function renderList() {
     document.getElementById('statusBar').textContent = `共 ${cards.length} 张角色卡｜点击卡片预览，右键棋子绑定`;
   }
 
-  // 初始化加载预览
   if (!bindTokenId) {
     if (document.body.classList.contains('collapsed')) {
       loadPreview(null);
@@ -93,7 +90,6 @@ function renderList() {
     }
   }
 
-  // 点击列表项
   list.querySelectorAll('.list-item').forEach(item => {
     item.addEventListener('click', async (e) => {
       if (e.target.classList.contains('delete-btn')) return;
@@ -121,24 +117,60 @@ function renderList() {
         return;
       }
 
-      // ===== 绑定模式：通过 postMessage 通知 background =====
+      // ===== 绑定模式：直接写入 metadata，不发送任何消息 =====
+      const tokenId = bindTokenId;
+      const raw = localStorage.getItem(STORAGE_PREFIX + cardId);
+      if (!raw) {
+        alert('角色卡数据不存在');
+        return;
+      }
+      const data = JSON.parse(raw);
+      if (data.isLocked === undefined) data.isLocked = false;
+
       try {
-        await OBR.popover.postMessage({
-          type: 'bind-role',
-          tokenId: bindTokenId,
-          cardId: cardId,
+        // 直接写入 Token metadata
+        await OBR.scene.items.updateItems([tokenId], (items) => {
+          for (let item of items) {
+            if (item.type === 'IMAGE') {
+              // 存储完整数据到 metadata
+              item.metadata['com.wow.fu-character/data'] = {
+                ...data,
+                cardId: cardId
+              };
+              
+              // 更新文字标签
+              if (!item.text) {
+                item.text = {
+                  plainText: '',
+                  type: 'PLAIN',
+                  width: 'AUTO',
+                  height: 'AUTO'
+                };
+              }
+              item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            }
+          }
         });
-        // 发送成功后关闭弹窗
+
+        // 保存绑定关系到 localStorage（供 background 恢复气泡使用）
+        const bindingData = { type: 'role', cardId, tokenId, data };
+        localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
+
+        // 保存锁状态
+        localStorage.setItem(`${LOCK_KEY}${tokenId}`, JSON.stringify({ locked: false }));
+
+        OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
+        
+        // 关闭弹窗（background 的 onChange 会自动创建气泡）
         OBR.popover.close('com.wow.fu-character/popover');
       } catch (err) {
-        console.error('绑定消息发送失败:', err);
-        alert('绑定失败，请确保扩展后台已运行。错误详情见控制台。');
+        console.error('绑定失败:', err);
+        alert('绑定失败，请查看控制台错误信息。');
       }
     });
   });
 }
 
-// 删除角色卡
 function deleteCard(event, cardId) {
   event.stopPropagation();
   if (!confirm(`确定要删除角色卡「${cardId}」吗？`)) return;
@@ -151,7 +183,6 @@ function deleteCard(event, cardId) {
 }
 window.deleteCard = deleteCard;
 
-// 绑定导入文件按钮
 const importBtn = document.getElementById('importBtn');
 const excelFile = document.getElementById('excelFile');
 

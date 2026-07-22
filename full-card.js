@@ -4,7 +4,6 @@ const STORAGE_PREFIX = 'cc-fu-data-';
 const LOCK_KEY = 'fu-lock-';
 const BINDING_KEY = 'fu-binding-';
 
-// 从 URL 解析参数
 const urlParams = new URLSearchParams(window.location.search);
 const tokenId = urlParams.get('tokenId');
 const cardId = urlParams.get('cardId');
@@ -32,10 +31,11 @@ if (!tokenId && !cardId) {
     // 监听数据变化（多人同步）
     if (tokenId) {
       OBR.scene.items.onChange(async (changes) => {
-        const token = changes.find(item => item.id === tokenId);
-        if (token && token.metadata?.['com.wow.fu-character/data']) {
-          characterData = token.metadata['com.wow.fu-character/data'];
-          renderCard(characterData);
+        for (const change of changes) {
+          if (change.item.id === tokenId && change.item.metadata?.['com.wow.fu-character/data']) {
+            characterData = change.item.metadata['com.wow.fu-character/data'];
+            renderCard(characterData);
+          }
         }
       });
     }
@@ -44,7 +44,6 @@ if (!tokenId && !cardId) {
 
 // ==================== 加载数据 ====================
 async function loadAndRender() {
-  // 优先从 localStorage 读取（编辑保存后的数据）
   if (cardId) {
     const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
     if (raw) {
@@ -54,13 +53,11 @@ async function loadAndRender() {
     }
   }
 
-  // 从 Token metadata 读取
   if (tokenId) {
     try {
       const items = await OBR.scene.items.getItems([tokenId]);
       if (items.length > 0 && items[0].metadata?.['com.wow.fu-character/data']) {
         characterData = items[0].metadata['com.wow.fu-character/data'];
-        // 同步到 localStorage
         if (characterData.cardId) {
           currentCardId = characterData.cardId;
           localStorage.setItem(`${STORAGE_PREFIX}${currentCardId}`, JSON.stringify(characterData));
@@ -89,7 +86,7 @@ async function saveData() {
     localStorage.setItem(`${STORAGE_PREFIX}${currentCardId}`, JSON.stringify(characterData));
   }
 
-  // 2. 保存到 Token metadata
+  // 2. 保存到 Token metadata（background 的 onChange 会自动刷新气泡）
   if (tokenId) {
     await OBR.scene.items.updateItems([tokenId], (items) => {
       for (let item of items) {
@@ -98,7 +95,6 @@ async function saveData() {
             ...characterData,
             cardId: currentCardId
           };
-          // 更新文字标签
           if (!item.text) {
             item.text = {
               plainText: '',
@@ -113,34 +109,16 @@ async function saveData() {
     });
   }
 
-  // 3. 刷新气泡
-  if (tokenId) {
-    try {
-      // 通知 background 刷新气泡
-      OBR.popover.postMessage({
-        type: 'refresh-bubble',
-        tokenId: tokenId,
-        data: characterData,
-        cardId: currentCardId
-      });
-    } catch (e) {
-      // 如果无法发送消息，忽略（background 会在下次场景变化时恢复）
-    }
-  }
-
-  console.log('💾 数据已保存');
+  console.log('💾 数据已保存（background 会自动刷新气泡）');
 }
 
-// ==================== 渲染卡片（完全可编辑） ====================
+// ==================== 渲染卡片 ====================
 function renderCard(d) {
   const container = document.getElementById('cardContainer');
   const isLocked = d.isLocked || false;
   const shouldHide = isLocked && !isGMAccess;
-
-  // 判断是否可编辑（GM 或 预览模式）
   const isEditable = isGMAccess || !tokenId;
 
-  // 渲染资源条（可编辑）
   const renderResource = (label, current, max, fieldCur, fieldMax, cssClass) => {
     const percent = max > 0 ? Math.min((current / max) * 100, 100) : 0;
     const curDisplay = shouldHide ? '??' : current;
@@ -162,7 +140,6 @@ function renderCard(d) {
     `;
   };
 
-  // 渲染武器行
   const renderWeaponRow = (weapon, index) => {
     if (!weapon || !weapon.name || weapon.name.trim() === '') {
       return `<tr class="empty-row"><td colspan="6" style="text-align:center;color:#555;">（无武器）</td></tr>`;
@@ -184,7 +161,6 @@ function renderCard(d) {
     `;
   };
 
-  // 四维属性
   const attrs = [
     { label: '敏捷', field: 'dex', value: shouldHide ? '??' : `D${d.dex || 0}` },
     { label: '洞察', field: 'ins', value: shouldHide ? '??' : `D${d.ins || 0}` },
@@ -203,7 +179,6 @@ function renderCard(d) {
     `;
   });
 
-  // 战斗属性
   const combatFields = [
     { label: '⚔️ 先攻', field: 'init', value: shouldHide ? '??' : (d.init || 0) },
     { label: '🛡️ 物防', field: 'pd', value: shouldHide ? '??' : (d.pd || 0) },
@@ -221,7 +196,6 @@ function renderCard(d) {
     `;
   });
 
-  // 锁图标
   const lockIcon = isLocked ? '🔒' : '🔓';
   const lockTitle = isLocked ? '已锁定（非GM隐藏数值）' : '未锁定（所有人可见）';
   const lockBtnHtml = isGMAccess 
@@ -247,14 +221,11 @@ function renderCard(d) {
 
     <div class="fu-card-body">
       <div class="fu-attributes">${attrsHtml}</div>
-
       <div class="fu-combat-stats">${combatHtml}</div>
-
       ${renderResource('HP', d.hp, d.hpMax, 'hp', 'hpMax', 'resource-hp')}
       ${renderResource('MP', d.mp, d.mpMax, 'mp', 'mpMax', 'resource-mp')}
       ${renderResource('IP', d.ip, d.ipMax, 'ip', 'ipMax', 'resource-ip')}
       ${renderResource('命刻', d.crisisCurrent, d.crisisMax, 'crisisCurrent', 'crisisMax', 'resource-crisis')}
-
       <div class="fu-crisis-box">
         <div class="title">🔥 零界能力</div>
         <div class="detail">
@@ -263,14 +234,12 @@ function renderCard(d) {
           <span>｜ 填充格数：<span class="editable-text" data-field="crisisSlots" ${isEditable && !shouldHide ? 'data-editable="true"' : ''}>${d.crisisSlots || '无'}</span></span>
         </div>
       </div>
-
       <div class="fu-defenses">
         <span class="tag"><strong>弱点：</strong><span class="editable-text" data-field="weakness" ${isEditable && !shouldHide ? 'data-editable="true"' : ''}>${d.weakness || '无'}</span></span>
         <span class="tag"><strong>抵抗：</strong><span class="editable-text" data-field="resistance" ${isEditable && !shouldHide ? 'data-editable="true"' : ''}>${d.resistance || '无'}</span></span>
         <span class="tag"><strong>免疫：</strong><span class="editable-text" data-field="immunity" ${isEditable && !shouldHide ? 'data-editable="true"' : ''}>${d.immunity || '无'}</span></span>
         <span class="tag"><strong>吸收：</strong><span class="editable-text" data-field="absorb" ${isEditable && !shouldHide ? 'data-editable="true"' : ''}>${d.absorb || '无'}</span></span>
       </div>
-
       <table class="fu-weapons">
         <thead><tr><th>类别</th><th>名称</th><th>检定</th><th>属性</th><th>类型</th><th>伤害</th></tr></thead>
         <tbody>
@@ -281,7 +250,6 @@ function renderCard(d) {
     </div>
   `;
 
-  // ---- 绑定事件 ----
   bindEditableFields();
   bindCloseButton();
   bindLockButton();
@@ -290,7 +258,6 @@ function renderCard(d) {
 
 // ==================== 绑定可编辑字段 ====================
 function bindEditableFields() {
-  // 数字字段（点击弹出输入框）
   document.querySelectorAll('.editable-num[data-editable="true"]').forEach(el => {
     el.style.cursor = 'pointer';
     el.addEventListener('click', (e) => {
@@ -301,7 +268,6 @@ function bindEditableFields() {
     });
   });
 
-  // 文本字段（点击弹出输入框）
   document.querySelectorAll('.editable-text[data-editable="true"]').forEach(el => {
     el.style.cursor = 'pointer';
     el.addEventListener('click', (e) => {
@@ -313,7 +279,6 @@ function bindEditableFields() {
   });
 }
 
-// ==================== 数字编辑 ====================
 function makeEditableNumber(el, field, oldValue) {
   const input = document.createElement('input');
   input.type = 'number';
@@ -341,8 +306,6 @@ function makeEditableNumber(el, field, oldValue) {
       input.replaceWith(el);
       return;
     }
-    
-    // 更新数据
     updateDataField(field, numVal);
     el.textContent = newVal;
     input.replaceWith(el);
@@ -350,17 +313,11 @@ function makeEditableNumber(el, field, oldValue) {
 
   input.addEventListener('blur', saveValue);
   input.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') {
-      ev.preventDefault();
-      input.blur();
-    }
-    if (ev.key === 'Escape') {
-      input.replaceWith(el);
-    }
+    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+    if (ev.key === 'Escape') { input.replaceWith(el); }
   });
 }
 
-// ==================== 文本编辑 ====================
 function makeEditableText(el, field, oldValue) {
   const input = document.createElement('input');
   input.type = 'text';
@@ -387,21 +344,14 @@ function makeEditableText(el, field, oldValue) {
 
   input.addEventListener('blur', saveValue);
   input.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') {
-      ev.preventDefault();
-      input.blur();
-    }
-    if (ev.key === 'Escape') {
-      input.replaceWith(el);
-    }
+    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+    if (ev.key === 'Escape') { input.replaceWith(el); }
   });
 }
 
-// ==================== 更新数据字段 ====================
 function updateDataField(field, value) {
   if (!characterData) return;
 
-  // 处理嵌套字段（如 weapon1.name）
   if (field.includes('.')) {
     const parts = field.split('.');
     let obj = characterData;
@@ -415,14 +365,11 @@ function updateDataField(field, value) {
   }
 
   console.log(`📝 字段已更新: ${field} = ${value}`);
-  
-  // 如果是HP或HPMax变化，同时更新Token的文字标签
   if (field === 'hp' || field === 'hpMax' || field === 'name') {
     updateTokenLabel();
   }
 }
 
-// ==================== 更新Token文字标签 ====================
 async function updateTokenLabel() {
   if (!tokenId || !characterData) return;
   try {
@@ -441,7 +388,6 @@ async function updateTokenLabel() {
   }
 }
 
-// ==================== 保存按钮 ====================
 function bindSaveButton() {
   const saveBtn = document.getElementById('fuSaveBtn');
   if (saveBtn) {
@@ -452,19 +398,16 @@ function bindSaveButton() {
   }
 }
 
-// ==================== 关闭按钮 ====================
 function bindCloseButton() {
   const closeBtn = document.getElementById('fuCloseBtn');
   if (closeBtn) {
     closeBtn.addEventListener('click', async () => {
-      // 先保存
       await saveData();
       OBR.popover.close('fu-card-popover');
     });
   }
 }
 
-// ==================== 锁按钮 ====================
 function bindLockButton() {
   const lockBtn = document.getElementById('fuLockBtn');
   if (lockBtn) {
@@ -476,12 +419,10 @@ function bindLockButton() {
       const newLocked = !characterData.isLocked;
       characterData.isLocked = newLocked;
       
-      // 保存锁状态到localStorage
       if (currentCardId) {
         localStorage.setItem(`${STORAGE_PREFIX}${currentCardId}`, JSON.stringify(characterData));
       }
       
-      // 保存锁状态到Token metadata
       if (tokenId) {
         await OBR.scene.items.updateItems([tokenId], (items) => {
           for (let item of items) {
@@ -492,32 +433,9 @@ function bindLockButton() {
         });
       }
       
-      // 保存锁状态到独立存储（供background读取）
-      localStorage.setItem(`fu-lock-${tokenId}`, JSON.stringify({ locked: newLocked }));
-      
-      // 刷新气泡
-      if (tokenId) {
-        try {
-          OBR.popover.postMessage({
-            type: 'refresh-bubble',
-            tokenId: tokenId,
-            data: characterData,
-            cardId: currentCardId
-          });
-        } catch (e) {}
-      }
-      
-      // 重新渲染
+      localStorage.setItem(`${LOCK_KEY}${tokenId}`, JSON.stringify({ locked: newLocked }));
       renderCard(characterData);
       OBR.notification.show(newLocked ? '🔒 已锁定' : '🔓 已解锁');
     });
   }
 }
-
-// ==================== 监听来自background的消息 ====================
-OBR.popover.onMessage((message) => {
-  if (message.type === 'data-updated') {
-    // 其他玩家修改了数据，重新加载
-    loadAndRender();
-  }
-});

@@ -7,7 +7,6 @@ const BINDING_KEY = 'fu-binding-';
 const LOCK_KEY = 'fu-lock-';
 const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
-// 1x1 透明 PNG base64
 const ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 // ==================== 工具函数 ====================
@@ -183,6 +182,17 @@ async function injectBubble(tokenId, data, cardId) {
       isLocked = !isLocked;
       localStorage.setItem(`${LOCK_KEY}${tokenId}`, JSON.stringify({ locked: isLocked }));
       lockBtn.textContent = isLocked ? '🔒' : '🔓';
+      
+      // 更新metadata中的锁状态
+      await OBR.scene.items.updateItems([tokenId], (items) => {
+        for (let item of items) {
+          if (item.type === 'IMAGE' && item.metadata['com.wow.fu-character/data']) {
+            item.metadata['com.wow.fu-character/data'].isLocked = isLocked;
+          }
+        }
+      });
+      
+      // 刷新气泡
       const bindingData = JSON.parse(localStorage.getItem(`${BINDING_KEY}${tokenId}`));
       if (bindingData) {
         const cardData = bindingData.cardId 
@@ -276,25 +286,69 @@ async function bindHpBarToToken(tokenId) {
   OBR.notification.show('✅ 已绑定默认血条');
 }
 
+// ==================== 检查并恢复气泡 ====================
+async function checkAndRestoreBubble(tokenId) {
+  const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
+  if (!binding) return;
+  try {
+    const parsed = JSON.parse(binding);
+    if (parsed.cardId) {
+      const cardData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`));
+      if (cardData) {
+        await injectBubble(tokenId, cardData, parsed.cardId);
+        return;
+      }
+    } else if (parsed.data) {
+      await injectBubble(tokenId, parsed.data, null);
+    }
+  } catch (e) {
+    console.warn('恢复气泡失败:', e);
+  }
+}
+
+// ==================== 监听场景变化（核心：自动刷新气泡） ====================
+OBR.scene.items.onChange(async (changes) => {
+  for (const change of changes) {
+    // 处理新增的IMAGE（场景刷新后恢复）
+    if (change.type === 'ADD' && change.item.type === 'IMAGE') {
+      await checkAndRestoreBubble(change.item.id);
+    }
+    
+    // 处理metadata变化（数据更新后刷新气泡）
+    if (change.type === 'UPDATE' && change.item.type === 'IMAGE') {
+      const tokenId = change.item.id;
+      const metadata = change.item.metadata?.['com.wow.fu-character/data'];
+      if (metadata) {
+        // 检查气泡是否存在
+        const existing = bubbleContainers.get(tokenId);
+        if (existing) {
+          // 如果气泡已存在，刷新它
+          const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
+          if (binding) {
+            try {
+              const parsed = JSON.parse(binding);
+              const cardData = parsed.cardId 
+                ? JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`))
+                : parsed.data;
+              if (cardData) {
+                // 合并最新数据
+                Object.assign(cardData, metadata);
+                await injectBubble(tokenId, cardData, parsed.cardId);
+              }
+            } catch (e) {}
+          }
+        } else {
+          // 如果气泡不存在，创建它
+          await checkAndRestoreBubble(tokenId);
+        }
+      }
+    }
+  }
+});
+
 // ==================== 注册右键菜单 ====================
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
-
-  // ★★★ 修复：使用正确的 API addMessageListener ★★★
-  try {
-    OBR.popover.addMessageListener((message) => {
-      console.log('📨 收到popover消息:', message);
-      if (message.type === 'bind-role') {
-        bindRoleToToken(message.tokenId, message.cardId);
-      }
-      if (message.type === 'refresh-bubble') {
-        injectBubble(message.tokenId, message.data, message.cardId);
-      }
-    });
-    console.log('✅ popover消息监听已注册');
-  } catch (e) {
-    console.warn('popover消息监听注册失败:', e);
-  }
 
   // 1. 绑定角色卡
   OBR.contextMenu.create({
@@ -426,27 +480,4 @@ OBR.onReady(() => {
   console.log('✅ 菜单4已注册: 解绑');
 
   console.log('✅ 所有右键菜单已注册完成！');
-});
-
-// ==================== 场景恢复（刷新后重新注入） ====================
-OBR.scene.items.onChange(async (changes) => {
-  for (const change of changes) {
-    if (change.type === 'ADD' && change.item.type === 'IMAGE') {
-      const tokenId = change.item.id;
-      const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
-      if (binding) {
-        try {
-          const parsed = JSON.parse(binding);
-          if (parsed.cardId) {
-            const cardData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`));
-            if (cardData) {
-              await injectBubble(tokenId, cardData, parsed.cardId);
-            }
-          } else if (parsed.data) {
-            await injectBubble(tokenId, parsed.data, null);
-          }
-        } catch (e) {}
-      }
-    }
-  }
 });
