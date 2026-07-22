@@ -65,7 +65,6 @@
       display: flex;
       overflow: hidden;
     }
-    /* 绑定模式布局 */
     .bind-layout {
       display: flex;
       width: 100%;
@@ -115,8 +114,6 @@
       color: #666;
       font-size: 14px;
     }
-
-    /* 编辑模式表单 */
     .form-group {
       margin-bottom: 15px;
     }
@@ -162,12 +159,12 @@
       <div class="header-title" id="page-title">FU角色卡管理</div>
       <div class="file-input-wrapper" id="upload-wrapper">
         <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;" />
-        <button class="btn btn-secondary" onclick="document.getElementById('excel-file-input').click()">导入Excel角色卡</button>
+        <button class="btn btn-secondary" id="btn-trigger-upload">导入Excel角色卡</button>
       </div>
     </div>
 
     <div class="content-area" id="main-content">
-      <!-- 动态通过 JavaScript 渲染内容 -->
+      <!-- 动态通过 JS 渲染 -->
     </div>
   </div>
 

@@ -3,8 +3,7 @@ import DataManager from "./core/DataManager.js";
 import ExcelParser from "./core/ExcelParser.js";
 import { createBubble, updateBubble, METADATA_KEY } from "./bubble.js";
 
-// 全局状态管理
-let currentMode = "bind"; // 'bind' 或 'card'
+let currentMode = "bind";
 let currentTokenId = null;
 let currentCardId = null;
 let selectedCardData = null;
@@ -13,13 +12,11 @@ let currentUserRole = "PLAYER";
 OBR.onReady(async () => {
   currentUserRole = await OBR.room.getRole();
 
-  // 从 URL 参数解析 mode, tokenId 和 cardId
   const urlParams = new URLSearchParams(window.location.search);
   currentMode = urlParams.get("mode") || "bind";
   currentTokenId = urlParams.get("tokenId");
   currentCardId = urlParams.get("cardId");
 
-  // 初始化 Excel 导入监听
   setupExcelImport();
 
   if (currentMode === "bind") {
@@ -27,16 +24,20 @@ OBR.onReady(async () => {
     renderBindLayout();
   } else if (currentMode === "card") {
     document.getElementById("page-title").innerText = "编辑角色卡数值";
-    document.getElementById("upload-wrapper").style.display = "none";
+    const uploadWrapper = document.getElementById("upload-wrapper");
+    if (uploadWrapper) uploadWrapper.style.display = "none";
     renderCardLayout();
   }
 });
 
-/**
- * 监听 Excel 文件上传与解析
- */
 function setupExcelImport() {
   const fileInput = document.getElementById("excel-file-input");
+  const triggerBtn = document.getElementById("btn-trigger-upload");
+
+  if (triggerBtn && fileInput) {
+    triggerBtn.onclick = () => fileInput.click();
+  }
+
   if (!fileInput) return;
 
   fileInput.addEventListener("change", async (event) => {
@@ -47,7 +48,7 @@ function setupExcelImport() {
       const parsedCards = await ExcelParser.parse(file);
       if (parsedCards && parsedCards.length > 0) {
         parsedCards.forEach((card) => {
-          DataManager.saveCard(card);
+          if (DataManager.saveCard) DataManager.saveCard(card);
         });
         OBR.notification.show(`成功导入 ${parsedCards.length} 张角色卡！`);
 
@@ -64,9 +65,6 @@ function setupExcelImport() {
   });
 }
 
-/**
- * 渲染绑定角色卡界面 (绑定模式)
- */
 function renderBindLayout() {
   const mainContent = document.getElementById("main-content");
   mainContent.innerHTML = `
@@ -81,14 +79,18 @@ function renderBindLayout() {
   refreshCardList();
 }
 
-/**
- * 刷新角色卡列表
- */
 function refreshCardList() {
   const listContainer = document.getElementById("card-list-container");
   if (!listContainer) return;
 
-  const allCards = DataManager.getAllCards();
+  // 兼容调用 DataManager 的获取卡片方法
+  let allCards = [];
+  if (typeof DataManager.getCards === "function") {
+    allCards = DataManager.getCards();
+  } else if (typeof DataManager.getAllCards === "function") {
+    allCards = DataManager.getAllCards();
+  }
+
   listContainer.innerHTML = "";
 
   if (allCards.length === 0) {
@@ -106,7 +108,6 @@ function refreshCardList() {
 
     cardEl.onclick = () => {
       selectedCardData = card;
-      // 重新渲染高亮选中项
       refreshCardList();
       renderCardPreview(card);
     };
@@ -115,9 +116,6 @@ function refreshCardList() {
   });
 }
 
-/**
- * 渲染右侧预览及绑定按钮
- */
 function renderCardPreview(card) {
   const previewContainer = document.getElementById("preview-panel-container");
   if (!previewContainer) return;
@@ -155,24 +153,17 @@ function renderCardPreview(card) {
       return;
     }
 
-    // 调用 bubble.js 写入气泡与 metadata
     await createBubble(currentTokenId, card);
     OBR.notification.show(`已成功绑定角色卡：${card.name}`);
-
-    // 关闭 Popover 窗口
     OBR.popover.close("com.wow.fu-character/popover");
   };
 }
 
-/**
- * 渲染全屏大卡片编辑界面 (查看/编辑模式)
- */
 async function renderCardLayout() {
   const mainContent = document.getElementById("main-content");
-  
-  // 从 Token 读取当前绑定的真实 Metadata 数据
+
   const [token] = await OBR.scene.items.getItems([currentTokenId]);
-  if (!token || !token.metadata[METADATA_KEY]) {
+  if (!token || !token.metadata || !token.metadata[METADATA_KEY]) {
     mainContent.innerHTML = `<div class="preview-placeholder">目标 Token 上未找到绑定数据</div>`;
     return;
   }
@@ -251,7 +242,6 @@ async function renderCardLayout() {
     };
   }
 
-  // 保存数据按钮回调
   document.getElementById("save-card-btn").onclick = async () => {
     const updatedData = {
       ...liveData,
@@ -265,11 +255,9 @@ async function renderCardLayout() {
       locked: currentLockState,
     };
 
-    // 同步刷新 OBR Token 气泡与 Metadata
     await updateBubble(currentTokenId, updatedData);
 
-    // 如果存有卡片 ID，同步更新本地 LocalStorage
-    if (updatedData.cardId) {
+    if (updatedData.cardId && DataManager.saveCard) {
       DataManager.saveCard(updatedData);
     }
 
