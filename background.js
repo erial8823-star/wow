@@ -22,12 +22,10 @@ function getCardList() {
   });
 }
 
-// 检查 Token 是否已绑定
 function isTokenBound(tokenId) {
   return localStorage.getItem(`${BINDING_KEY}${tokenId}`) !== null;
 }
 
-// 获取绑定的角色卡 ID
 function getBoundCardId(tokenId) {
   const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
   if (!binding) return null;
@@ -37,47 +35,6 @@ function getBoundCardId(tokenId) {
   } catch (e) {
     return null;
   }
-}
-
-// ==================== 绑定函数 ====================
-
-async function bindRoleToToken(tokenId, cardId) {
-  const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
-  if (!raw) {
-    OBR.notification.show('角色卡数据不存在');
-    return;
-  }
-  const data = JSON.parse(raw);
-
-  // 更新 Token metadata 和文本标签
-  await OBR.scene.items.updateItems([tokenId], (items) => {
-    for (let item of items) {
-      if (item.type === 'IMAGE') {
-        // ★★★ 重要：写入 metadata，让右键菜单的 filter 能检测到 ★★★
-        item.metadata['com.wow.fu-character/data'] = {
-          ...data,
-          cardId: cardId
-        };
-
-        // Token 下方只显示角色名
-        if (!item.text) {
-          item.text = {
-            plainText: '',
-            type: 'PLAIN',
-            width: 'AUTO',
-            height: 'AUTO'
-          };
-        }
-        item.text.plainText = data.name || '角色';
-      }
-    }
-  });
-
-  // 保存绑定关系到 localStorage
-  const bindingData = { type: 'role', cardId, tokenId, data };
-  localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
-
-  OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
 }
 
 // ==================== 打开大卡片 ====================
@@ -96,38 +53,69 @@ async function openCard(tokenId) {
   });
 }
 
+// ==================== 绑定函数 ====================
+
+async function bindRoleToToken(tokenId, cardId) {
+  const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
+  if (!raw) {
+    OBR.notification.show('角色卡数据不存在');
+    return;
+  }
+  const data = JSON.parse(raw);
+
+  await OBR.scene.items.updateItems([tokenId], (items) => {
+    for (let item of items) {
+      if (item.type === 'IMAGE') {
+        item.metadata['com.wow.fu-character/data'] = {
+          ...data,
+          cardId: cardId
+        };
+
+        if (!item.text) {
+          item.text = {
+            plainText: '',
+            type: 'PLAIN',
+            width: 'AUTO',
+            height: 'AUTO'
+          };
+        }
+        item.text.plainText = data.name || '角色';
+      }
+    }
+  });
+
+  const bindingData = { type: 'role', cardId, tokenId, data };
+  localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
+
+  OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
+}
+
+// ==================== 解绑函数 ====================
+
+async function unbindToken(tokenId) {
+  await OBR.scene.items.updateItems([tokenId], (items) => {
+    for (let item of items) {
+      if (item.type === 'IMAGE') {
+        delete item.metadata['com.wow.fu-character/data'];
+        if (item.text) {
+          item.text.plainText = item.name || '';
+        }
+      }
+    }
+  });
+
+  localStorage.removeItem(`${BINDING_KEY}${tokenId}`);
+  OBR.notification.show('已解绑');
+}
+
 // ==================== 所有逻辑在 OBR.onReady 内部 ====================
 
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // ---- 监听 Token 选中（左键点击自动打开大卡片） ----
-  let popupedTokenId = null;
-
-  // 监听选中变化
-  OBR.scene.items.onChange(async (changes) => {
-    // 检查是否有选中的 Token
-    const selectedItems = await OBR.scene.items.getSelected();
-    if (selectedItems.length === 0) return;
-
-    const token = selectedItems[0];
-    if (!token || token.type !== 'IMAGE') return;
-
-    // 检查是否已绑定
-    if (!isTokenBound(token.id)) return;
-
-    // 防重复弹出
-    if (popupedTokenId === token.id) return;
-    popupedTokenId = token.id;
-    setTimeout(() => { popupedTokenId = null; }, 1000);
-
-    console.log(`🖱️ 点击了已绑定的 Token: ${token.id}`);
-    await openCard(token.id);
-  });
-
   // ---- 右键菜单 ----
 
-  // 1. 绑定角色卡
+  // 1. 绑定角色卡（始终显示，仅GM可见）
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
@@ -135,7 +123,8 @@ OBR.onReady(() => {
       label: '📋 绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
-      }
+      },
+      roles: ['GM']
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -158,7 +147,7 @@ OBR.onReady(() => {
     }
   });
 
-  // 2. 打开角色卡（手动）
+  // 2. 打开角色卡（始终显示，在 onClick 中判断是否已绑定）
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
@@ -166,7 +155,6 @@ OBR.onReady(() => {
       label: '🃏 打开FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
-        // 不在这里用 filter 过滤，在 onClick 中判断
       }
     }],
     onClick: async (context) => {
@@ -174,14 +162,14 @@ OBR.onReady(() => {
       if (items.length === 0) return;
       const token = items[0];
       if (!isTokenBound(token.id)) {
-        OBR.notification.show('该 Token 未绑定角色卡');
+        OBR.notification.show('该 Token 未绑定角色卡，请先绑定');
         return;
       }
       await openCard(token.id);
     }
   });
 
-  // 3. 解绑
+  // 3. 解绑（始终显示，在 onClick 中判断是否已绑定）
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
@@ -189,8 +177,8 @@ OBR.onReady(() => {
       label: '🗑️ 解绑',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
-        // 不在这里用 filter 过滤，在 onClick 中判断
-      }
+      },
+      roles: ['GM']
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -200,23 +188,10 @@ OBR.onReady(() => {
         OBR.notification.show('该 Token 未绑定角色卡');
         return;
       }
-
-      await OBR.scene.items.updateItems([token.id], (items) => {
-        for (let item of items) {
-          if (item.type === 'IMAGE') {
-            delete item.metadata['com.wow.fu-character/data'];
-            if (item.text) {
-              item.text.plainText = item.name || '';
-            }
-          }
-        }
-      });
-
-      localStorage.removeItem(`${BINDING_KEY}${token.id}`);
-      OBR.notification.show('已解绑');
+      await unbindToken(token.id);
     }
   });
 
-  console.log('✅ 右键菜单已注册');
-  console.log('✅ 左键点击已绑定的 Token 将自动打开大卡片');
+  console.log('✅ 右键菜单已注册：绑定角色卡 | 打开角色卡 | 解绑');
+  console.log('💡 提示：打开角色卡和解绑菜单始终可见，点击时会自动检测是否已绑定');
 });
