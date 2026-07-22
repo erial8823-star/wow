@@ -154,6 +154,8 @@ async function injectBubble(tokenId, data, cardId) {
     }
   }
 
+  // 注意：这里注册的 onChange 是在函数内部，且是在 OBR.onReady 之后调用的，
+  // 所以 SDK 一定已经就绪，不会触发 "not ready" 错误。
   const onChangeUnsubscribe = OBR.scene.items.onChange((changes) => {
     for (const change of changes) {
       if (change.item.id === tokenId && change.changes.position) {
@@ -284,11 +286,11 @@ async function bindHpBarToToken(tokenId) {
   OBR.notification.show('✅ 已绑定默认血条');
 }
 
-// ==================== 注册右键菜单 & 场景监听（全部放在 OBR.onReady 内部） ====================
+// ==================== 所有逻辑集中在 OBR.onReady 内部 ====================
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // ---- 监听场景变化（自动恢复气泡） ----
+  // ---- 场景变化监听（用于恢复气泡） ----
   OBR.scene.items.onChange(async (changes) => {
     for (const change of changes) {
       if (change.type === 'ADD' && change.item.type === 'IMAGE') {
