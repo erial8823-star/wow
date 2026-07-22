@@ -23,7 +23,9 @@ function getCardList() {
 }
 
 function isTokenBound(tokenId) {
-  return localStorage.getItem(`${BINDING_KEY}${tokenId}`) !== null;
+  const result = localStorage.getItem(`${BINDING_KEY}${tokenId}`) !== null;
+  console.log(`🔍 检查绑定状态 [${tokenId}]: ${result}`);
+  return result;
 }
 
 function getBoundCardId(tokenId) {
@@ -37,25 +39,11 @@ function getBoundCardId(tokenId) {
   }
 }
 
-// ==================== 打开大卡片 ====================
-
-async function openCard(tokenId) {
-  const cardId = getBoundCardId(tokenId);
-  if (!cardId) {
-    OBR.notification.show('该 Token 未绑定角色卡');
-    return;
-  }
-  OBR.popover.open({
-    id: 'fu-card-popover',
-    url: `${base}/full-card.html?cardId=${cardId}&tokenId=${tokenId}&t=${Date.now()}`,
-    width: 620,
-    height: 600
-  });
-}
-
 // ==================== 绑定函数 ====================
 
 async function bindRoleToToken(tokenId, cardId) {
+  console.log(`📦 开始绑定: tokenId=${tokenId}, cardId=${cardId}`);
+  
   const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
   if (!raw) {
     OBR.notification.show('角色卡数据不存在');
@@ -86,13 +74,35 @@ async function bindRoleToToken(tokenId, cardId) {
 
   const bindingData = { type: 'role', cardId, tokenId, data };
   localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
-
+  
+  console.log(`✅ 绑定成功，数据已保存: ${BINDING_KEY}${tokenId}`);
+  console.log(`📋 绑定数据:`, bindingData);
+  
   OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
+}
+
+// ==================== 打开大卡片 ====================
+
+async function openCard(tokenId) {
+  console.log(`🃏 打开卡片: tokenId=${tokenId}`);
+  const cardId = getBoundCardId(tokenId);
+  if (!cardId) {
+    OBR.notification.show('该 Token 未绑定角色卡');
+    return;
+  }
+  OBR.popover.open({
+    id: 'fu-card-popover',
+    url: `${base}/full-card.html?cardId=${cardId}&tokenId=${tokenId}&t=${Date.now()}`,
+    width: 620,
+    height: 600
+  });
 }
 
 // ==================== 解绑函数 ====================
 
 async function unbindToken(tokenId) {
+  console.log(`🗑️ 解绑: tokenId=${tokenId}`);
+  
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (let item of items) {
       if (item.type === 'IMAGE') {
@@ -105,15 +115,25 @@ async function unbindToken(tokenId) {
   });
 
   localStorage.removeItem(`${BINDING_KEY}${tokenId}`);
+  console.log(`✅ 解绑成功，已删除: ${BINDING_KEY}${tokenId}`);
   OBR.notification.show('已解绑');
 }
+
+// ==================== 监听广播消息（来自popover的绑定请求） ====================
+
+OBR.broadcast.onMessage('fu-bind-channel', (message) => {
+  console.log('📨 收到绑定广播:', message);
+  if (message.type === 'bind-role') {
+    bindRoleToToken(message.tokenId, message.cardId);
+  }
+});
 
 // ==================== 所有逻辑在 OBR.onReady 内部 ====================
 
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // ---- 右键菜单（所有人可见，无GM限制） ----
+  // ---- 右键菜单 ----
 
   // 1. 绑定角色卡
   OBR.contextMenu.create({

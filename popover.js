@@ -2,6 +2,7 @@ import OBR from '@owlbear-rodeo/sdk';
 import * as XLSX from 'xlsx';
 
 const STORAGE_PREFIX = 'cc-fu-data-';
+const BINDING_KEY = 'fu-binding-';
 let isSdkReady = false;
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -121,60 +122,31 @@ function renderList() {
         return;
       }
 
-      // ===== 绑定模式 =====
+      // ===== 绑定模式：通过广播通知 background 执行绑定 =====
       const tokenId = bindTokenId;
-      const data = JSON.parse(localStorage.getItem(STORAGE_PREFIX + cardId));
-      if (!data) return;
-
-      await OBR.scene.items.updateItems([tokenId], (items) => {
-        for (let item of items) {
-          if (item.type === 'IMAGE') {
-            item.metadata['com.wow.fu-character/data'] = {
-              cardId: cardId,
-              name: data.name,
-              level: data.level,
-              hp: data.hp,
-              hpMax: data.hpMax,
-              mp: data.mp,
-              mpMax: data.mpMax,
-              ip: data.ip,
-              ipMax: data.ipMax,
-              dex: data.dex,
-              ins: data.ins,
-              mig: data.mig,
-              wlp: data.wlp,
-              init: data.init,
-              pd: data.pd,
-              md: data.md,
-              weakness: data.weakness,
-              resistance: data.resistance,
-              immunity: data.immunity,
-              absorb: data.absorb,
-              crisisName: data.crisisName,
-              crisisCondition: data.crisisCondition,
-              crisisSlots: data.crisisSlots,
-              crisisCurrent: data.crisisCurrent,
-              crisisMax: data.crisisMax,
-              weapon1: data.weapon1,
-              weapon2: data.weapon2
-            };
-            
-            if (!item.text) {
-              item.text = {
-                plainText: '',
-                type: 'PLAIN',
-                width: 'AUTO',
-                height: 'AUTO'
-              };
-            }
-            // 只显示角色名
-            item.text.plainText = data.name;
-          }
-        }
-      });
-
-      alert(`✅ 已成功将角色卡「${data.name}」绑定到棋子「${bindTokenName}」！`);
-      OBR.popover.close('com.wow.fu-character/popover');
+      
+      console.log(`📤 发送绑定广播: tokenId=${tokenId}, cardId=${cardId}`);
+      
+      try {
+        // 使用广播发送绑定请求给 background
+        OBR.broadcast.sendMessage('fu-bind-channel', {
+          type: 'bind-role',
+          tokenId: tokenId,
+          cardId: cardId
+        });
+        
+        // 显示绑定中的提示
+        OBR.notification.show(`⏳ 正在绑定角色卡...`);
+        
+        // 等待一小段时间让 background 完成绑定
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 关闭弹窗
+        OBR.popover.close('com.wow.fu-character/popover');
+      } catch (err) {
+        console.error('绑定失败:', err);
+        alert('绑定失败，请查看控制台错误信息。');
+      }
     });
   });
 }
