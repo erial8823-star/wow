@@ -183,7 +183,6 @@ async function injectBubble(tokenId, data, cardId) {
       localStorage.setItem(`${LOCK_KEY}${tokenId}`, JSON.stringify({ locked: isLocked }));
       lockBtn.textContent = isLocked ? '🔒' : '🔓';
       
-      // 更新metadata中的锁状态
       await OBR.scene.items.updateItems([tokenId], (items) => {
         for (let item of items) {
           if (item.type === 'IMAGE' && item.metadata['com.wow.fu-character/data']) {
@@ -192,7 +191,6 @@ async function injectBubble(tokenId, data, cardId) {
         }
       });
       
-      // 刷新气泡
       const bindingData = JSON.parse(localStorage.getItem(`${BINDING_KEY}${tokenId}`));
       if (bindingData) {
         const cardData = bindingData.cardId 
@@ -286,64 +284,35 @@ async function bindHpBarToToken(tokenId) {
   OBR.notification.show('✅ 已绑定默认血条');
 }
 
-// ==================== 检查并恢复气泡 ====================
-async function checkAndRestoreBubble(tokenId) {
-  const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
-  if (!binding) return;
-  try {
-    const parsed = JSON.parse(binding);
-    if (parsed.cardId) {
-      const cardData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`));
-      if (cardData) {
-        await injectBubble(tokenId, cardData, parsed.cardId);
-        return;
-      }
-    } else if (parsed.data) {
-      await injectBubble(tokenId, parsed.data, null);
-    }
-  } catch (e) {
-    console.warn('恢复气泡失败:', e);
-  }
-}
-
-// ==================== 监听场景变化（自动刷新气泡） ====================
-OBR.scene.items.onChange(async (changes) => {
-  for (const change of changes) {
-    if (change.type === 'ADD' && change.item.type === 'IMAGE') {
-      await checkAndRestoreBubble(change.item.id);
-    }
-    if (change.type === 'UPDATE' && change.item.type === 'IMAGE') {
-      const tokenId = change.item.id;
-      const metadata = change.item.metadata?.['com.wow.fu-character/data'];
-      if (metadata) {
-        const existing = bubbleContainers.get(tokenId);
-        if (existing) {
-          const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
-          if (binding) {
-            try {
-              const parsed = JSON.parse(binding);
-              const cardData = parsed.cardId 
-                ? JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`))
-                : parsed.data;
-              if (cardData) {
-                Object.assign(cardData, metadata);
-                await injectBubble(tokenId, cardData, parsed.cardId);
-              }
-            } catch (e) {}
-          }
-        } else {
-          await checkAndRestoreBubble(tokenId);
-        }
-      }
-    }
-  }
-});
-
-// ==================== 注册右键菜单（无 roles 限制） ====================
+// ==================== 注册右键菜单 & 场景监听（全部放在 OBR.onReady 内部） ====================
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // 1. 绑定角色卡
+  // ---- 监听场景变化（自动恢复气泡） ----
+  OBR.scene.items.onChange(async (changes) => {
+    for (const change of changes) {
+      if (change.type === 'ADD' && change.item.type === 'IMAGE') {
+        const tokenId = change.item.id;
+        const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
+        if (binding) {
+          try {
+            const parsed = JSON.parse(binding);
+            if (parsed.cardId) {
+              const cardData = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`));
+              if (cardData) {
+                await injectBubble(tokenId, cardData, parsed.cardId);
+              }
+            } else if (parsed.data) {
+              await injectBubble(tokenId, parsed.data, null);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  });
+  console.log('✅ 场景监听已注册');
+
+  // ---- 1. 绑定角色卡 ----
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
@@ -373,7 +342,7 @@ OBR.onReady(() => {
   });
   console.log('✅ 菜单1已注册: 绑定FU角色卡');
 
-  // 2. 绑定血条组件
+  // ---- 2. 绑定血条组件 ----
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-hpbar',
     icons: [{
@@ -393,7 +362,7 @@ OBR.onReady(() => {
   });
   console.log('✅ 菜单2已注册: 绑定FU血条组件');
 
-  // 3. 打开角色卡
+  // ---- 3. 打开角色卡 ----
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
@@ -433,7 +402,7 @@ OBR.onReady(() => {
   });
   console.log('✅ 菜单3已注册: 打开FU角色卡');
 
-  // 4. 解绑
+  // ---- 4. 解绑 ----
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
