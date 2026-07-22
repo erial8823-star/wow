@@ -6,8 +6,6 @@ const STORAGE_PREFIX = 'cc-fu-data-';
 const BINDING_KEY = 'fu-binding-';
 const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
-// ==================== 工具函数 ====================
-
 function getCardList() {
   const keys = Object.keys(localStorage);
   const ourKeys = keys.filter(k => k.startsWith(STORAGE_PREFIX));
@@ -22,8 +20,6 @@ function getCardList() {
   });
 }
 
-// ==================== 绑定函数 ====================
-
 async function bindRoleToToken(tokenId, cardId) {
   const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
   if (!raw) {
@@ -32,17 +28,14 @@ async function bindRoleToToken(tokenId, cardId) {
   }
   const data = JSON.parse(raw);
 
-  // 更新 Token metadata 和文本标签
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (let item of items) {
       if (item.type === 'IMAGE') {
-        // 存储完整数据到 metadata
         item.metadata['com.wow.fu-character/data'] = {
           ...data,
           cardId: cardId
         };
 
-        // 设置 Token 下方的原生标签：只显示角色名
         if (!item.text) {
           item.text = {
             plainText: '',
@@ -56,60 +49,49 @@ async function bindRoleToToken(tokenId, cardId) {
     }
   });
 
-  // 保存绑定关系
-  const bindingData = { type: 'role', cardId, tokenId, data };
-  localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
-
+  localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify({ type: 'role', cardId, tokenId, data }));
   OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
 }
 
-// ==================== 监听 Token 选中（点击打开大卡片） ====================
-
-// 记录已经弹出卡片的 Token，防止重复弹出
-let popupedTokenId = null;
-
-OBR.scene.items.onChange(async (changes) => {
-  // 检测选中的 Token
-  const selectedItems = await OBR.scene.items.getSelected();
-  if (selectedItems.length === 0) return;
-
-  const token = selectedItems[0];
-  if (!token || token.type !== 'IMAGE') return;
-
-  const binding = localStorage.getItem(`${BINDING_KEY}${token.id}`);
-  if (!binding) return;
-
-  const parsed = JSON.parse(binding);
-  if (!parsed.cardId) return;
-
-  // 防止同一个 Token 重复弹出
-  if (popupedTokenId === token.id) return;
-  popupedTokenId = token.id;
-  setTimeout(() => { popupedTokenId = null; }, 1000);
-
-  // 打开大卡片
-  OBR.popover.open({
-    id: 'fu-card-popover',
-    url: `${base}/full-card.html?cardId=${parsed.cardId}&tokenId=${token.id}&t=${Date.now()}`,
-    width: 620,
-    height: 600
-  });
-});
-
-// ==================== 注册右键菜单 ====================
-
+// ✅ 所有监听和菜单注册都在 OBR.onReady 内部
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // 1. 绑定角色卡
+  // ---- 监听 Token 选中（点击打开大卡片） ----
+  let popupedTokenId = null;
+
+  OBR.scene.items.onChange(async (changes) => {
+    const selectedItems = await OBR.scene.items.getSelected();
+    if (selectedItems.length === 0) return;
+
+    const token = selectedItems[0];
+    if (!token || token.type !== 'IMAGE') return;
+
+    const binding = localStorage.getItem(`${BINDING_KEY}${token.id}`);
+    if (!binding) return;
+
+    const parsed = JSON.parse(binding);
+    if (!parsed.cardId) return;
+
+    if (popupedTokenId === token.id) return;
+    popupedTokenId = token.id;
+    setTimeout(() => { popupedTokenId = null; }, 1000);
+
+    OBR.popover.open({
+      id: 'fu-card-popover',
+      url: `${base}/full-card.html?cardId=${parsed.cardId}&tokenId=${token.id}&t=${Date.now()}`,
+      width: 620,
+      height: 600
+    });
+  });
+
+  // ---- 右键菜单 ----
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
       icon: `${base}/assets/icon.png`,
       label: '📋 绑定FU角色卡',
-      filter: {
-        every: [{ key: 'type', value: 'IMAGE' }]
-      }
+      filter: { every: [{ key: 'type', value: 'IMAGE' }] }
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -123,7 +105,6 @@ OBR.onReady(() => {
         OBR.notification.show('暂无角色卡，请先导入');
         return;
       }
-
       OBR.popover.open({
         id: 'com.wow.fu-character/popover',
         url: `${base}/popover.html?bindTokenId=${token.id}&t=${Date.now()}`,
@@ -133,7 +114,6 @@ OBR.onReady(() => {
     }
   });
 
-  // 2. 打开角色卡（手动触发）
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
@@ -167,7 +147,6 @@ OBR.onReady(() => {
     }
   });
 
-  // 3. 解绑
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
@@ -183,7 +162,6 @@ OBR.onReady(() => {
       if (items.length === 0) return;
       const token = items[0];
 
-      // 清除 metadata 中的角色卡数据
       await OBR.scene.items.updateItems([token.id], (items) => {
         for (let item of items) {
           if (item.type === 'IMAGE') {
@@ -195,7 +173,6 @@ OBR.onReady(() => {
         }
       });
 
-      // 清除本地绑定记录
       localStorage.removeItem(`${BINDING_KEY}${token.id}`);
       OBR.notification.show('已解绑');
     }

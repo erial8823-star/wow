@@ -2,14 +2,14 @@
   "name": "FU角色卡扩展",
   "version": "1.0.0",
   "manifest_version": 1,
-  "author": "你的名字",
+  "author": "Cloud",
   "description": "支持Excel导入的FU规则角色卡，含全屏卡片与Token悬浮气泡",
   "icon": "/wow/assets/icon.png",
-  "background_url": "/wow/background.html",
+  "background_url": "/wow/dist/background.html",
   "action": {
     "title": "FU角色卡",
     "icon": "/wow/assets/icon.png",
-    "popover": "/wow/popover.html",
+    "popover": "/wow/dist/popover.html",
     "height": 600,
     "width": 400
   }
