@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     basicSsl()
   ],
+  base: '/wow/dist/',  // ← 关键：所有资源从这个路径加载
   build: {
     rollupOptions: {
       input: {

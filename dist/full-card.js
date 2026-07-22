@@ -1,12 +1,12 @@
-import{t as e}from"./assets/modulepreload-polyfill-B-eOYwHK.js";import{a as t,i as n,n as r,o as i,t as a}from"./assets/lib-D1lqUKHH-mJqKNSWf-DuRg_PIi.js";e((()=>{i(),n(),t((()=>{r();var e=new URLSearchParams(window.location.search),t=e.get(`tokenId`),n=e.get(`previewCardId`),i=null,o=!1;!t&&!n?document.getElementById(`cardContainer`).innerHTML=`
+import{t as e}from"./assets/modulepreload-polyfill-B-eOYwHK.js";import{a as t,c as n,i as r,l as i,n as a,o,r as s,t as c}from"./assets/lib-D1lqUKHH-mJqKNSWf-DuRg_PIi-D0UBZoUE.js";e((()=>{n(),r(),i((()=>{t(),o(),c((()=>{s();var e=new URLSearchParams(window.location.search),t=e.get(`tokenId`),n=e.get(`previewCardId`),r=null,i=!1;!t&&!n?document.getElementById(`cardContainer`).innerHTML=`
     <div style="text-align: center; padding: 40px; color: #e74c3c;">
       ❌ 错误：未指定 Token ID 或角色卡 ID
     </div>
-  `:a.onReady(async()=>{try{o=await a.player.getRole()===`GM`}catch{o=!0}await s(),t&&a.scene.items.onChange(async e=>{let n=e.find(e=>e.id===t);n&&n.metadata[`com.wow.fu-character/data`]&&(i=n.metadata[`com.wow.fu-character/data`],c(i))})});async function s(){if(n){try{let e=localStorage.getItem(`cc-fu-data-`+n);if(e)i=JSON.parse(e),c(i);else throw Error(`该角色卡已从本地删除`)}catch(e){document.getElementById(`cardContainer`).innerHTML=`
+  `:a.onReady(async()=>{try{i=await a.player.getRole()===`GM`}catch{i=!0}await o(),t&&a.scene.items.onChange(async e=>{let n=e.find(e=>e.id===t);n&&n.metadata[`com.wow.fu-character/data`]&&(r=n.metadata[`com.wow.fu-character/data`],c(r))})});async function o(){if(n){try{let e=localStorage.getItem(`cc-fu-data-`+n);if(e)r=JSON.parse(e),c(r);else throw Error(`该角色卡已从本地删除`)}catch(e){document.getElementById(`cardContainer`).innerHTML=`
         <div style="text-align: center; padding: 40px; color: #e74c3c;">
           加载预览卡片失败: ${e.message}
         </div>
-      `}return}try{let e=await a.scene.items.getItems([t]);e.length>0&&e[0].metadata[`com.wow.fu-character/data`]?(i=e[0].metadata[`com.wow.fu-character/data`],c(i)):document.getElementById(`cardContainer`).innerHTML=`
+      `}return}try{let e=await a.scene.items.getItems([t]);e.length>0&&e[0].metadata[`com.wow.fu-character/data`]?(r=e[0].metadata[`com.wow.fu-character/data`],c(r)):document.getElementById(`cardContainer`).innerHTML=`
         <div style="text-align: center; padding: 40px; color: #e67e22;">
           ⚠️ 此 Token 未绑定任何角色卡，或绑定数据已丢失。<br>
           请先在右侧管理界面中，选择棋子并点击一张导入的角色卡进行绑定。
@@ -15,15 +15,15 @@ import{t as e}from"./assets/modulepreload-polyfill-B-eOYwHK.js";import{a as t,i 
       <div style="text-align: center; padding: 40px; color: #e74c3c;">
         读取数据失败: ${e.message}
       </div>
-    `}}function c(e){let r=document.getElementById(`cardContainer`),i=e.isLocked||!1,s=i&&!o,u=o||!t?`fu-editable`:``,d=(e,n,r,i,a)=>{let c=r>0?Math.min(n/r*100,100):0,l=s?`??`:n,u=s?`??`:r,d=!s&&(o||!t)?`fu-editable`:``;return`
-      <div class="resource-row ${a}">
+    `}}function c(e){let r=document.getElementById(`cardContainer`),o=e.isLocked||!1,s=o&&!i,u=i||!t?`fu-editable`:``,d=(e,n,r,a,o)=>{let c=r>0?Math.min(n/r*100,100):0,l=s?`??`:n,u=s?`??`:r,d=!s&&(i||!t)?`fu-editable`:``;return`
+      <div class="resource-row ${o}">
         <span class="label">${e}</span>
-        <div class="bar-wrap" data-field="${i}">
+        <div class="bar-wrap" data-field="${a}">
           <div class="bar-fill" style="width:${c}%;"></div>
           <div class="bar-text">
-            <span class="${d}" data-field="${i}Cur">${l}</span>
+            <span class="${d}" data-field="${a}Cur">${l}</span>
             <span style="margin:0 2px;">/</span>
-            <span class="${d}" data-field="${i}Max">${u}</span>
+            <span class="${d}" data-field="${a}Max">${u}</span>
           </div>
         </div>
       </div>
@@ -36,7 +36,7 @@ import{t as e}from"./assets/modulepreload-polyfill-B-eOYwHK.js";import{a as t,i 
         <td>${e.type||`-`}</td>
         <td>${n}</td>
       </tr>
-    `},p=s?`??`:e.dex||0,m=s?`??`:e.ins||0,h=s?`??`:e.mig||0,g=s?`??`:e.wlp||0,_=s?`??`:e.init||0,v=s?`??`:e.pd||0,y=s?`??`:e.md||0,b=i?`🔒`:`🔓`,x=i?`已锁定（非GM隐藏数值，进度条仍可见）`:`未锁定（所有玩家可见数值）`,S=o||!t?`<button id="fuLockBtn" title="${x}" style="background:none; border:none; cursor:pointer; font-size:16px; margin-left:8px; color:#f0c060;">${b}</button>`:`<span title="${x}" style="font-size:16px; margin-left:8px;">${b}</span>`;r.innerHTML=`
+    `},p=s?`??`:e.dex||0,m=s?`??`:e.ins||0,h=s?`??`:e.mig||0,g=s?`??`:e.wlp||0,_=s?`??`:e.init||0,v=s?`??`:e.pd||0,y=s?`??`:e.md||0,b=o?`🔒`:`🔓`,x=o?`已锁定（非GM隐藏数值，进度条仍可见）`:`未锁定（所有玩家可见数值）`,S=i||!t?`<button id="fuLockBtn" title="${x}" style="background:none; border:none; cursor:pointer; font-size:16px; margin-left:8px; color:#f0c060;">${b}</button>`:`<span title="${x}" style="font-size:16px; margin-left:8px;">${b}</span>`;r.innerHTML=`
     <div class="fu-card-header">
       <div style="display:flex; align-items:center;">
         <span style="font-size:22px; color:#f0c060;">${e.name||`未命名角色`}</span>
@@ -89,4 +89,4 @@ import{t as e}from"./assets/modulepreload-polyfill-B-eOYwHK.js";import{a as t,i 
         </tbody>
       </table>
     </div>
-  `;let C=document.getElementById(`fuCloseBtn`);C&&C.addEventListener(`click`,async()=>{a.popover.close(`fu-card-popover`),a.popover.close(`fu-card-preview`)});let w=document.getElementById(`fuLockBtn`);w&&(o||!t)&&w.addEventListener(`click`,async()=>{let r=!i;e.isLocked=r,n?(localStorage.setItem(`cc-fu-data-`+n,JSON.stringify(e)),c(e)):t&&await a.scene.items.updateItems([t],e=>{for(let t of e)t.type===`IMAGE`&&t.metadata[`com.wow.fu-character/data`]&&(t.metadata[`com.wow.fu-character/data`].isLocked=r)})}),l()}function l(){document.querySelectorAll(`.fu-editable`).forEach(e=>{e.addEventListener(`click`,t=>{t.stopPropagation();let n=e.dataset.field,r=e.textContent.trim(),i=document.createElement(`input`);i.type=`number`,i.className=`fu-editable-input`,i.value=r,i.style.width=`55px`,i.style.background=`#0d0d1a`,i.style.color=`#fff`,i.style.border=`1px solid #555`,i.style.borderRadius=`3px`,i.style.padding=`2px`,e.replaceWith(i),i.focus(),i.select(),i.addEventListener(`blur`,async()=>{let t=i.value.trim();t===``&&(t=`0`);let r=Number(t);if(isNaN(r)){alert(`请输入有效数字`),i.replaceWith(e);return}await u(n,r),e.textContent=r,i.replaceWith(e)}),i.addEventListener(`keydown`,t=>{t.key===`Enter`&&(t.preventDefault(),i.blur()),t.key===`Escape`&&i.replaceWith(e)})})})}async function u(e,r){let o=``;if(e===`init`||e===`pd`||e===`md`)o=e;else if(e.endsWith(`Cur`)){let t=e.slice(0,-3);t===`hp`?o=`hp`:t===`mp`?o=`mp`:t===`ip`?o=`ip`:t===`crisis`&&(o=`crisisCurrent`)}else if(e.endsWith(`Max`)){let t=e.slice(0,-3);t===`hp`?o=`hpMax`:t===`mp`?o=`mpMax`:t===`ip`?o=`ipMax`:t===`crisis`&&(o=`crisisMax`)}if(o){if(i[o]=r,n){localStorage.setItem(`cc-fu-data-`+n,JSON.stringify(i)),console.log(`💾 本地角色卡数据已更新: ${o} = ${r}`);return}await a.scene.items.updateItems([t],e=>{for(let t of e)if(t.type===`IMAGE`&&t.metadata[`com.wow.fu-character/data`]){t.metadata[`com.wow.fu-character/data`][o]=r;let e=t.metadata[`com.wow.fu-character/data`];t.text||={richText:[{type:`paragraph`,children:[{text:``}]}],plainText:``,style:{padding:8,fontFamily:`Roboto`,fontSize:24,fontWeight:400,textAlign:`CENTER`,textAlignVertical:`BOTTOM`,fillColor:`white`,fillOpacity:1,strokeColor:`white`,strokeOpacity:1,strokeWidth:0,lineHeight:1.5},type:`PLAIN`,width:`AUTO`,height:`AUTO`},t.text.plainText=`${e.name}\nHP ${e.hp}/${e.hpMax}`,t.textItemType=`LABEL`}}),console.log(`💾 元数据已写入: ${o} = ${r}`)}}}))()}))();
+  `;let C=document.getElementById(`fuCloseBtn`);C&&C.addEventListener(`click`,async()=>{a.popover.close(`fu-card-popover`),a.popover.close(`fu-card-preview`)});let w=document.getElementById(`fuLockBtn`);w&&(i||!t)&&w.addEventListener(`click`,async()=>{let r=!o;e.isLocked=r,n?(localStorage.setItem(`cc-fu-data-`+n,JSON.stringify(e)),c(e)):t&&await a.scene.items.updateItems([t],e=>{for(let t of e)t.type===`IMAGE`&&t.metadata[`com.wow.fu-character/data`]&&(t.metadata[`com.wow.fu-character/data`].isLocked=r)})}),l()}function l(){document.querySelectorAll(`.fu-editable`).forEach(e=>{e.addEventListener(`click`,t=>{t.stopPropagation();let n=e.dataset.field,r=e.textContent.trim(),i=document.createElement(`input`);i.type=`number`,i.className=`fu-editable-input`,i.value=r,i.style.width=`55px`,i.style.background=`#0d0d1a`,i.style.color=`#fff`,i.style.border=`1px solid #555`,i.style.borderRadius=`3px`,i.style.padding=`2px`,e.replaceWith(i),i.focus(),i.select(),i.addEventListener(`blur`,async()=>{let t=i.value.trim();t===``&&(t=`0`);let r=Number(t);if(isNaN(r)){alert(`请输入有效数字`),i.replaceWith(e);return}await u(n,r),e.textContent=r,i.replaceWith(e)}),i.addEventListener(`keydown`,t=>{t.key===`Enter`&&(t.preventDefault(),i.blur()),t.key===`Escape`&&i.replaceWith(e)})})})}async function u(e,i){let o=``;if(e===`init`||e===`pd`||e===`md`)o=e;else if(e.endsWith(`Cur`)){let t=e.slice(0,-3);t===`hp`?o=`hp`:t===`mp`?o=`mp`:t===`ip`?o=`ip`:t===`crisis`&&(o=`crisisCurrent`)}else if(e.endsWith(`Max`)){let t=e.slice(0,-3);t===`hp`?o=`hpMax`:t===`mp`?o=`mpMax`:t===`ip`?o=`ipMax`:t===`crisis`&&(o=`crisisMax`)}if(o){if(r[o]=i,n){localStorage.setItem(`cc-fu-data-`+n,JSON.stringify(r)),console.log(`💾 本地角色卡数据已更新: ${o} = ${i}`);return}await a.scene.items.updateItems([t],e=>{for(let t of e)if(t.type===`IMAGE`&&t.metadata[`com.wow.fu-character/data`]){t.metadata[`com.wow.fu-character/data`][o]=i;let e=t.metadata[`com.wow.fu-character/data`];t.text||={richText:[{type:`paragraph`,children:[{text:``}]}],plainText:``,style:{padding:8,fontFamily:`Roboto`,fontSize:24,fontWeight:400,textAlign:`CENTER`,textAlignVertical:`BOTTOM`,fillColor:`white`,fillOpacity:1,strokeColor:`white`,strokeOpacity:1,strokeWidth:0,lineHeight:1.5},type:`PLAIN`,width:`AUTO`,height:`AUTO`},t.text.plainText=`${e.name}\nHP ${e.hp}/${e.hpMax}`,t.textItemType=`LABEL`}}),console.log(`💾 元数据已写入: ${o} = ${i}`)}}}))()}))()}))();
