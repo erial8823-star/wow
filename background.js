@@ -306,23 +306,18 @@ async function checkAndRestoreBubble(tokenId) {
   }
 }
 
-// ==================== 监听场景变化（核心：自动刷新气泡） ====================
+// ==================== 监听场景变化（自动刷新气泡） ====================
 OBR.scene.items.onChange(async (changes) => {
   for (const change of changes) {
-    // 处理新增的IMAGE（场景刷新后恢复）
     if (change.type === 'ADD' && change.item.type === 'IMAGE') {
       await checkAndRestoreBubble(change.item.id);
     }
-    
-    // 处理metadata变化（数据更新后刷新气泡）
     if (change.type === 'UPDATE' && change.item.type === 'IMAGE') {
       const tokenId = change.item.id;
       const metadata = change.item.metadata?.['com.wow.fu-character/data'];
       if (metadata) {
-        // 检查气泡是否存在
         const existing = bubbleContainers.get(tokenId);
         if (existing) {
-          // 如果气泡已存在，刷新它
           const binding = localStorage.getItem(`${BINDING_KEY}${tokenId}`);
           if (binding) {
             try {
@@ -331,14 +326,12 @@ OBR.scene.items.onChange(async (changes) => {
                 ? JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${parsed.cardId}`))
                 : parsed.data;
               if (cardData) {
-                // 合并最新数据
                 Object.assign(cardData, metadata);
                 await injectBubble(tokenId, cardData, parsed.cardId);
               }
             } catch (e) {}
           }
         } else {
-          // 如果气泡不存在，创建它
           await checkAndRestoreBubble(tokenId);
         }
       }
@@ -346,7 +339,7 @@ OBR.scene.items.onChange(async (changes) => {
   }
 });
 
-// ==================== 注册右键菜单 ====================
+// ==================== 注册右键菜单（无 roles 限制） ====================
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
@@ -356,8 +349,7 @@ OBR.onReady(() => {
     icons: [{
       icon: ICON_BASE64,
       label: '📋 绑定FU角色卡',
-      filter: { every: [{ key: 'type', value: 'IMAGE' }] },
-      roles: ['GM']
+      filter: { every: [{ key: 'type', value: 'IMAGE' }] }
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -387,8 +379,7 @@ OBR.onReady(() => {
     icons: [{
       icon: ICON_BASE64,
       label: '❤️ 绑定FU血条组件',
-      filter: { every: [{ key: 'type', value: 'IMAGE' }] },
-      roles: ['GM']
+      filter: { every: [{ key: 'type', value: 'IMAGE' }] }
     }],
     onClick: async (context) => {
       const items = context.items;
