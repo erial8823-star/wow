@@ -6,13 +6,12 @@ export default defineConfig({
   plugins: [
     basicSsl()
   ],
-  base: './',  // ← 添加这一行，让构建产物使用相对路径
   build: {
     rollupOptions: {
       input: {
-        background: resolve(__dirname, 'background.html'),
-        popover: resolve(__dirname, 'popover.html'),
-        'full-card': resolve(__dirname, 'full-card.html'),
+        background: resolve(__dirname, 'background.js'),
+        popover: resolve(__dirname, 'popover.js'),
+        'full-card': resolve(__dirname, 'full-card.js'),
       },
       output: {
         entryFileNames: '[name].js',
@@ -22,9 +21,5 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     minify: true,
-  },
-  server: {
-    port: 3000,
-    https: true,
   },
 });

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>FU角色卡</title>
+  <!-- 引入全局样式以支持预览大卡片的样式 -->
   <link rel="stylesheet" href="./styles/main.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,6 +17,7 @@
       overflow: hidden;
     }
     
+    /* 双栏布局容器 */
     .fu-manager-body {
       display: flex;
       height: 100vh;
@@ -23,6 +25,7 @@
       overflow: hidden;
     }
 
+    /* 左栏：预览区 (重写为靠右渲染，边框移至左侧) */
     .fu-manager-left {
       flex: 1;
       padding: 16px;
@@ -34,6 +37,7 @@
       flex-direction: column;
     }
 
+    /* 右栏：列表区 (重写为靠左，固定宽度) */
     .fu-manager-right {
       width: 320px;
       padding: 16px;
@@ -44,6 +48,7 @@
       flex-shrink: 0;
     }
 
+    /* 绑定模式下的布局微调 */
     body.bind-mode .fu-manager-left {
       display: none !important;
     }
@@ -52,6 +57,7 @@
       border-left: none !important;
     }
 
+    /* 右侧头部和尾部 */
     .header {
       display: flex;
       justify-content: space-between;
@@ -149,6 +155,7 @@
     <div class="fu-manager-right">
       <div class="header">
         <h2>📋 FU角色卡</h2>
+        <!-- 隐藏的 File Input -->
         <input type="file" id="excelFile" accept=".xlsx, .xls" style="display:none">
         <button class="btn-import" id="importBtn">📄 导入Excel</button>
       </div>
@@ -166,6 +173,7 @@
     </div>
   </div>
 
-  <script type="module" src="./popover.js"></script>
+  <!-- 使用本地构建打包的脚本 -->
+  <script type="module" src="./dist/popover.js"></script>
 </body>
 </html>
