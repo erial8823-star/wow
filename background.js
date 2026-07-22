@@ -113,9 +113,9 @@ async function unbindToken(tokenId) {
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // ---- 右键菜单 ----
+  // ---- 右键菜单（所有人可见，无GM限制） ----
 
-  // 1. 绑定角色卡（始终显示，仅GM可见）
+  // 1. 绑定角色卡
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
@@ -123,8 +123,7 @@ OBR.onReady(() => {
       label: '📋 绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
-      },
-      roles: ['GM']
+      }
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -147,7 +146,7 @@ OBR.onReady(() => {
     }
   });
 
-  // 2. 打开角色卡（始终显示，在 onClick 中判断是否已绑定）
+  // 2. 打开角色卡
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
@@ -169,7 +168,7 @@ OBR.onReady(() => {
     }
   });
 
-  // 3. 解绑（始终显示，在 onClick 中判断是否已绑定）
+  // 3. 解绑
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
@@ -177,8 +176,7 @@ OBR.onReady(() => {
       label: '🗑️ 解绑',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
-      },
-      roles: ['GM']
+      }
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -193,5 +191,4 @@ OBR.onReady(() => {
   });
 
   console.log('✅ 右键菜单已注册：绑定角色卡 | 打开角色卡 | 解绑');
-  console.log('💡 提示：打开角色卡和解绑菜单始终可见，点击时会自动检测是否已绑定');
 });

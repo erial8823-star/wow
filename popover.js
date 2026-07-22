@@ -84,7 +84,6 @@ function renderList() {
 
   // 初始化加载预览
   if (!bindTokenId) {
-    // 默认折叠时不加载角色高亮与卡片
     if (document.body.classList.contains('collapsed')) {
       loadPreview(null);
     } else if (selectedPreviewCardId && cards.some(c => c.id === selectedPreviewCardId)) {
@@ -97,7 +96,7 @@ function renderList() {
   // 点击列表项进行 Token 绑定 或 切换左侧预览
   list.querySelectorAll('.list-item').forEach(item => {
     item.addEventListener('click', async (e) => {
-      if (e.target.classList.contains('delete-btn')) return; // 点击删除按钮不触发绑定/预览
+      if (e.target.classList.contains('delete-btn')) return;
       const cardId = item.dataset.id;
       
       if (!isSdkReady) {
@@ -113,7 +112,6 @@ function renderList() {
         list.querySelectorAll('.list-item').forEach(el => el.classList.remove('active'));
         item.classList.add('active');
         
-        // 如果当前是折叠状态，先拉宽窗口
         if (document.body.classList.contains('collapsed')) {
           document.body.classList.remove('collapsed');
           OBR.action.setWidth(920).catch(() => {});
@@ -123,12 +121,11 @@ function renderList() {
         return;
       }
 
-      // ===== 绑定模式下：绑定到指定的 bindTokenId =====
+      // ===== 绑定模式 =====
       const tokenId = bindTokenId;
       const data = JSON.parse(localStorage.getItem(STORAGE_PREFIX + cardId));
       if (!data) return;
 
-      // 将属性写入 Token 元数据 (Item Metadata)
       await OBR.scene.items.updateItems([tokenId], (items) => {
         for (let item of items) {
           if (item.type === 'IMAGE') {
@@ -162,40 +159,21 @@ function renderList() {
               weapon2: data.weapon2
             };
             
-            // ★★★ 修改：Token 原生标签只显示角色名（不再显示 HP） ★★★
             if (!item.text) {
               item.text = {
-                richText: [{ type: "paragraph", children: [{ text: "" }] }],
-                plainText: "",
-                style: {
-                  padding: 8,
-                  fontFamily: "Roboto",
-                  fontSize: 24,
-                  fontWeight: 400,
-                  textAlign: "CENTER",
-                  textAlignVertical: "BOTTOM",
-                  fillColor: "white",
-                  fillOpacity: 1,
-                  strokeColor: "white",
-                  strokeOpacity: 1,
-                  strokeWidth: 0,
-                  lineHeight: 1.5,
-                },
-                type: "PLAIN",
-                width: "AUTO",
-                height: "AUTO",
+                plainText: '',
+                type: 'PLAIN',
+                width: 'AUTO',
+                height: 'AUTO'
               };
             }
             // 只显示角色名
             item.text.plainText = data.name;
-            item.textItemType = 'LABEL';
           }
         }
       });
 
       alert(`✅ 已成功将角色卡「${data.name}」绑定到棋子「${bindTokenName}」！`);
-      
-      // 绑定成功后，自动关闭当前选择面板
       OBR.popover.close('com.wow.fu-character/popover');
     });
   });
@@ -212,7 +190,6 @@ function deleteCard(event, cardId) {
   }
   renderList();
 }
-// 将删除函数挂载 to window 全局，确保 HTML 中的 onclick 能够正常触发
 window.deleteCard = deleteCard;
 
 // 绑定导入文件按钮
@@ -289,7 +266,6 @@ excelFile.addEventListener('change', async (e) => {
     localStorage.setItem(STORAGE_PREFIX + cardId, JSON.stringify(characterData));
     document.getElementById('statusBar').textContent = `成功导入角色: ${characterData.name}`;
     
-    // 重置以允许重新上传相同文件
     excelFile.value = '';
     renderList();
   } catch (err) {
@@ -299,7 +275,7 @@ excelFile.addEventListener('change', async (e) => {
   }
 });
 
-// ---------- 预览卡片渲染逻辑 ----------
+// ---------- 预览卡片渲染 ----------
 function loadPreview(cardId) {
   const previewPane = document.getElementById('previewPane');
   if (!previewPane) return;
@@ -327,7 +303,6 @@ function loadPreview(cardId) {
 }
 
 function renderPreviewCard(d) {
-  // 四维属性
   const attrs = [
     { label: '敏捷', value: `D${d.dex || 0}` },
     { label: '洞察', value: `D${d.ins || 0}` },
@@ -345,7 +320,6 @@ function renderPreviewCard(d) {
     `;
   });
 
-  // 资源条
   const resources = [
     { label: 'HP', cur: d.hp, max: d.hpMax, cls: 'resource-hp' },
     { label: 'MP', cur: d.mp, max: d.mpMax, cls: 'resource-mp' },
@@ -373,7 +347,6 @@ function renderPreviewCard(d) {
     `;
   });
 
-  // 零界能力
   let crisisHtml = '';
   if (d.crisisName) {
     crisisHtml = `
@@ -395,7 +368,6 @@ function renderPreviewCard(d) {
     `;
   }
 
-  // 防御特性
   const defenses = [
     { label: '弱点', value: d.weakness || '无' },
     { label: '抵抗', value: d.resistance || '无' },
@@ -407,7 +379,6 @@ function renderPreviewCard(d) {
     defensesHtml += `<span class="tag"><strong>${def.label}：</strong>${def.value}</span>`;
   });
 
-  // 武器
   const weapons = [d.weapon1, d.weapon2];
   let weaponsHtml = '';
   weapons.forEach((w) => {
@@ -437,21 +408,15 @@ function renderPreviewCard(d) {
         <button class="btn-collapse" onclick="collapsePreview(event)" style="background:#2c2c44; border:1px solid #3a3a55; color:#aaa; font-size:11px; padding:2px 10px; border-radius:10px; cursor:pointer; transition: all 0.2s;">收起 ✕</button>
       </div>
       <div class="fu-preview-card-body" style="padding:16px 18px 18px 18px; overflow-y:auto; flex:1;">
-        <!-- 四维 -->
         <div class="fu-attributes">${attrsHtml}</div>
-        <!-- 战斗 -->
         <div class="fu-combat-stats">
           <span>⚔️ 先攻 <span class="num">${d.init || 0}</span></span>
           <span>🛡️ 物防 <span class="num">${d.pd || 0}</span></span>
           <span>✨ 魔防 <span class="num">${d.md || 0}</span></span>
         </div>
-        <!-- 资源 -->
         ${resourcesHtml}
-        <!-- 零界 -->
         ${crisisHtml}
-        <!-- 防御 -->
         <div class="fu-defenses">${defensesHtml}</div>
-        <!-- 武器 -->
         <table class="fu-weapons">
           <thead><tr><th>类别</th><th>名称</th><th>检定</th><th>属性</th><th>类型</th><th>伤害</th></tr></thead>
           <tbody>${weaponsHtml}</tbody>
@@ -461,7 +426,6 @@ function renderPreviewCard(d) {
   `;
 }
 
-// 收起左侧预览并将窗口缩回 400 宽
 function collapsePreview(event) {
   if (event) event.stopPropagation();
   document.body.classList.add('collapsed');
