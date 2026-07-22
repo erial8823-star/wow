@@ -7,12 +7,11 @@ const BINDING_KEY = 'fu-binding-';
 const LOCK_KEY = 'fu-lock-';
 const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
-// 1x1 透明 PNG base64（有效图标）
+// 1x1 透明 PNG base64
 const ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 // ==================== 工具函数 ====================
 
-/** 获取所有已保存的角色卡列表 */
 function getCardList() {
   const keys = Object.keys(localStorage);
   const ourKeys = keys.filter(k => k.startsWith(STORAGE_PREFIX));
@@ -27,7 +26,6 @@ function getCardList() {
   });
 }
 
-/** 判断当前用户是否为GM */
 async function isGM() {
   const role = await OBR.player.getRole();
   return role === 'GM';
@@ -38,14 +36,7 @@ const bubbleContainers = new Map();
 
 // ==================== 气泡注入核心 ====================
 
-/**
- * 在Token上方注入自定义气泡
- * @param {string} tokenId - Token的ID
- * @param {Object} data - 角色数据
- * @param {string|null} cardId - 角色卡ID（如果是血条则为null）
- */
 async function injectBubble(tokenId, data, cardId) {
-  // 移除旧气泡
   const old = bubbleContainers.get(tokenId);
   if (old) {
     old.container.remove();
@@ -53,7 +44,6 @@ async function injectBubble(tokenId, data, cardId) {
     bubbleContainers.delete(tokenId);
   }
 
-  // 获取Token位置
   const items = await OBR.scene.items.getItems([tokenId]);
   if (items.length === 0) {
     console.warn('Token不存在:', tokenId);
@@ -61,7 +51,6 @@ async function injectBubble(tokenId, data, cardId) {
   }
   const token = items[0];
 
-  // 读取锁定状态
   let isLocked = false;
   try {
     const lockData = JSON.parse(localStorage.getItem(`${LOCK_KEY}${tokenId}`));
@@ -71,7 +60,6 @@ async function injectBubble(tokenId, data, cardId) {
   const gm = await isGM();
   const showHidden = !gm && isLocked;
 
-  // 显示数据（锁定时非GM显示??）
   const displayHp = showHidden ? '??' : data.hp;
   const displayHpMax = showHidden ? '??' : data.hpMax;
   const displayMp = showHidden ? '??' : data.mp;
@@ -79,11 +67,9 @@ async function injectBubble(tokenId, data, cardId) {
   const displayPd = showHidden ? '??' : data.pd;
   const displayMd = showHidden ? '??' : data.md;
 
-  // 进度条百分比（即使锁定也显示进度）
   const hpPercent = data.hpMax > 0 ? Math.min((data.hp / data.hpMax) * 100, 100) : 0;
   const mpPercent = data.mpMax > 0 ? Math.min((data.mp / data.mpMax) * 100, 100) : 0;
 
-  // 盾牌SVG
   function shieldBlue(value) {
     return `<svg viewBox="0 0 28 28" style="width:20px;height:20px;display:block;"><path d="M14 2L3 7.5v8c0 6.5 11 12.5 11 12.5s11-6 11-12.5v-8L14 2z" fill="#3498db" stroke="#2980b9" stroke-width="1.5"/><text x="14" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="white">${value}</text></svg>`;
   }
@@ -93,7 +79,6 @@ async function injectBubble(tokenId, data, cardId) {
 
   const lockIcon = isLocked ? '🔒' : '🔓';
 
-  // 创建容器
   const container = document.createElement('div');
   container.className = 'fu-token-bubble-container';
   container.dataset.tokenId = tokenId;
@@ -134,7 +119,6 @@ async function injectBubble(tokenId, data, cardId) {
 
   document.body.appendChild(container);
 
-  // ===== 位置更新函数（使用SDK坐标转换） =====
   async function updatePosition() {
     const items = await OBR.scene.items.getItems([tokenId]);
     if (items.length === 0) {
@@ -146,12 +130,10 @@ async function injectBubble(tokenId, data, cardId) {
     const { x, y } = token.position;
 
     try {
-      // 使用SDK的坐标转换 API
       const screenPos = await OBR.viewport.convertSceneToScreen({ x, y });
       const tokenScreenX = screenPos.x;
       const tokenScreenY = screenPos.y;
 
-      // 获取Token的像素尺寸
       const tokenWidth = token.width || 1;
       const pixelSize = await OBR.viewport.convertSceneToScreen({ x: tokenWidth, y: 0 });
       const pixelWidth = Math.max(pixelSize.x, 30);
@@ -173,7 +155,6 @@ async function injectBubble(tokenId, data, cardId) {
     }
   }
 
-  // 监听Token移动
   const onChangeUnsubscribe = OBR.scene.items.onChange((changes) => {
     for (const change of changes) {
       if (change.item.id === tokenId && change.changes.position) {
@@ -182,7 +163,6 @@ async function injectBubble(tokenId, data, cardId) {
     }
   });
 
-  // 监听视口变化（缩放、平移）
   const viewportUnsubscribe = OBR.viewport.onChange(() => {
     updatePosition();
   });
@@ -192,7 +172,6 @@ async function injectBubble(tokenId, data, cardId) {
     viewportUnsubscribe();
   };
 
-  // ===== 锁按钮 =====
   const lockBtn = container.querySelector('.fu-lock-btn');
   if (lockBtn) {
     lockBtn.addEventListener('click', async (e) => {
@@ -204,14 +183,12 @@ async function injectBubble(tokenId, data, cardId) {
       isLocked = !isLocked;
       localStorage.setItem(`${LOCK_KEY}${tokenId}`, JSON.stringify({ locked: isLocked }));
       lockBtn.textContent = isLocked ? '🔒' : '🔓';
-      // 刷新气泡显示
       const bindingData = JSON.parse(localStorage.getItem(`${BINDING_KEY}${tokenId}`));
       if (bindingData) {
         const cardData = bindingData.cardId 
           ? JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${bindingData.cardId}`))
           : bindingData.data;
         if (cardData) {
-          // 更新角色卡中的锁状态
           cardData.isLocked = isLocked;
           await injectBubble(tokenId, cardData, bindingData.cardId);
         }
@@ -219,7 +196,6 @@ async function injectBubble(tokenId, data, cardId) {
     });
   }
 
-  // ===== 点击头像打开卡片 =====
   const avatarDiv = container.querySelector('div[style*="border-radius:50%"]');
   if (avatarDiv) {
     avatarDiv.addEventListener('click', async () => {
@@ -231,13 +207,11 @@ async function injectBubble(tokenId, data, cardId) {
           height: 600
         });
       } else {
-        // 血条模式：显示简单信息
         alert(`📊 ${data.name}\nHP: ${data.hp}/${data.hpMax}\nMP: ${data.mp}/${data.mpMax}\n物防: ${data.pd}\n魔防: ${data.md}`);
       }
     });
   }
 
-  // 存储绑定关系
   const bindingData = { type: cardId ? 'role' : 'hpbar', cardId, tokenId, data };
   localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
 
@@ -250,7 +224,6 @@ async function injectBubble(tokenId, data, cardId) {
 
 // ==================== 绑定函数 ====================
 
-/** 绑定角色卡到Token */
 async function bindRoleToToken(tokenId, cardId) {
   const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
   if (!raw) {
@@ -258,10 +231,8 @@ async function bindRoleToToken(tokenId, cardId) {
     return;
   }
   const data = JSON.parse(raw);
-  // 确保锁状态存在
   if (data.isLocked === undefined) data.isLocked = false;
   await injectBubble(tokenId, data, cardId);
-  // 更新Token的文字标签
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (let item of items) {
       if (item.type === 'IMAGE') {
@@ -269,7 +240,6 @@ async function bindRoleToToken(tokenId, cardId) {
           item.text = { plainText: '', type: 'PLAIN', width: 'AUTO', height: 'AUTO' };
         }
         item.text.plainText = data.name || '角色';
-        // 同时存储数据到metadata（供full-card读取）
         item.metadata['com.wow.fu-character/data'] = {
           ...data,
           cardId: cardId
@@ -280,7 +250,6 @@ async function bindRoleToToken(tokenId, cardId) {
   OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
 }
 
-/** 绑定血条组件到Token */
 async function bindHpBarToToken(tokenId) {
   const data = { 
     name: '测试勇士', 
@@ -307,16 +276,25 @@ async function bindHpBarToToken(tokenId) {
   OBR.notification.show('✅ 已绑定默认血条');
 }
 
-// ==================== 消息监听（来自popover） ====================
-OBR.popover.onMessage((message) => {
-  if (message.type === 'bind-role') {
-    bindRoleToToken(message.tokenId, message.cardId);
-  }
-});
-
 // ==================== 注册右键菜单 ====================
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
+
+  // ★★★ 修复：使用正确的 API addMessageListener ★★★
+  try {
+    OBR.popover.addMessageListener((message) => {
+      console.log('📨 收到popover消息:', message);
+      if (message.type === 'bind-role') {
+        bindRoleToToken(message.tokenId, message.cardId);
+      }
+      if (message.type === 'refresh-bubble') {
+        injectBubble(message.tokenId, message.data, message.cardId);
+      }
+    });
+    console.log('✅ popover消息监听已注册');
+  } catch (e) {
+    console.warn('popover消息监听注册失败:', e);
+  }
 
   // 1. 绑定角色卡
   OBR.contextMenu.create({
@@ -324,7 +302,8 @@ OBR.onReady(() => {
     icons: [{
       icon: ICON_BASE64,
       label: '📋 绑定FU角色卡',
-      filter: { every: [{ key: 'type', value: 'IMAGE' }] }
+      filter: { every: [{ key: 'type', value: 'IMAGE' }] },
+      roles: ['GM']
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -346,6 +325,7 @@ OBR.onReady(() => {
       });
     }
   });
+  console.log('✅ 菜单1已注册: 绑定FU角色卡');
 
   // 2. 绑定血条组件
   OBR.contextMenu.create({
@@ -353,7 +333,8 @@ OBR.onReady(() => {
     icons: [{
       icon: ICON_BASE64,
       label: '❤️ 绑定FU血条组件',
-      filter: { every: [{ key: 'type', value: 'IMAGE' }] }
+      filter: { every: [{ key: 'type', value: 'IMAGE' }] },
+      roles: ['GM']
     }],
     onClick: async (context) => {
       const items = context.items;
@@ -365,6 +346,7 @@ OBR.onReady(() => {
       await bindHpBarToToken(token.id);
     }
   });
+  console.log('✅ 菜单2已注册: 绑定FU血条组件');
 
   // 3. 打开角色卡
   OBR.contextMenu.create({
@@ -404,6 +386,7 @@ OBR.onReady(() => {
       });
     }
   });
+  console.log('✅ 菜单3已注册: 打开FU角色卡');
 
   // 4. 解绑
   OBR.contextMenu.create({
@@ -440,8 +423,9 @@ OBR.onReady(() => {
       OBR.notification.show('已解绑');
     }
   });
+  console.log('✅ 菜单4已注册: 解绑');
 
-  console.log('✅ 右键菜单已注册');
+  console.log('✅ 所有右键菜单已注册完成！');
 });
 
 // ==================== 场景恢复（刷新后重新注入） ====================
