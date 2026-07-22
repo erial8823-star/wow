@@ -3,10 +3,10 @@ import OBR from '@owlbear-rodeo/sdk';
 console.log('🔥 FU角色卡扩展后台已加载！');
 
 const STORAGE_PREFIX = 'cc-fu-data-';
+const BINDING_KEY = 'fu-binding-';
 const base = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
-// 1x1 透明 PNG base64（有效的 URI）
-const ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+// ==================== 工具函数 ====================
 
 function getCardList() {
   const keys = Object.keys(localStorage);
@@ -22,155 +22,90 @@ function getCardList() {
   });
 }
 
+// ==================== 绑定函数 ====================
+
+async function bindRoleToToken(tokenId, cardId) {
+  const raw = localStorage.getItem(`${STORAGE_PREFIX}${cardId}`);
+  if (!raw) {
+    OBR.notification.show('角色卡数据不存在');
+    return;
+  }
+  const data = JSON.parse(raw);
+
+  // 更新 Token metadata 和文本标签
+  await OBR.scene.items.updateItems([tokenId], (items) => {
+    for (let item of items) {
+      if (item.type === 'IMAGE') {
+        // 存储完整数据到 metadata
+        item.metadata['com.wow.fu-character/data'] = {
+          ...data,
+          cardId: cardId
+        };
+
+        // 设置 Token 下方的原生标签：只显示角色名
+        if (!item.text) {
+          item.text = {
+            plainText: '',
+            type: 'PLAIN',
+            width: 'AUTO',
+            height: 'AUTO'
+          };
+        }
+        item.text.plainText = data.name || '角色';
+      }
+    }
+  });
+
+  // 保存绑定关系
+  const bindingData = { type: 'role', cardId, tokenId, data };
+  localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
+
+  OBR.notification.show(`✅ 已绑定角色卡: ${data.name}`);
+}
+
+// ==================== 监听 Token 选中（点击打开大卡片） ====================
+
+// 记录已经弹出卡片的 Token，防止重复弹出
+let popupedTokenId = null;
+
+OBR.scene.items.onChange(async (changes) => {
+  // 检测选中的 Token
+  const selectedItems = await OBR.scene.items.getSelected();
+  if (selectedItems.length === 0) return;
+
+  const token = selectedItems[0];
+  if (!token || token.type !== 'IMAGE') return;
+
+  const binding = localStorage.getItem(`${BINDING_KEY}${token.id}`);
+  if (!binding) return;
+
+  const parsed = JSON.parse(binding);
+  if (!parsed.cardId) return;
+
+  // 防止同一个 Token 重复弹出
+  if (popupedTokenId === token.id) return;
+  popupedTokenId = token.id;
+  setTimeout(() => { popupedTokenId = null; }, 1000);
+
+  // 打开大卡片
+  OBR.popover.open({
+    id: 'fu-card-popover',
+    url: `${base}/full-card.html?cardId=${parsed.cardId}&tokenId=${token.id}&t=${Date.now()}`,
+    width: 620,
+    height: 600
+  });
+});
+
+// ==================== 注册右键菜单 ====================
+
 OBR.onReady(() => {
   console.log('🎯 OBR SDK 已就绪');
 
-  // 1. 右键菜单：绑定角色卡（打开列表选择并进行绑定）
+  // 1. 绑定角色卡
   OBR.contextMenu.create({
     id: 'fu-character-extension/bind-role',
     icons: [{
       icon: `${base}/assets/icon.png`,
-      label: '📋 绑定角色卡',
-function findTokenElement(tokenId) {
-  return document.querySelector(`[data-token-id="${tokenId}"]`);
-}
-
-function injectBubble(tokenId, tokenEl, data, cardId) {
-  const oldContainer = document.querySelector(`.fu-token-bubble-container[data-token-id="${tokenId}"]`);
-  if (oldContainer) oldContainer.remove();
-
-  const container = document.createElement('div');
-  container.className = 'fu-token-bubble-container';
-  container.dataset.tokenId = tokenId;
-  container.style.cssText = `
-    position: fixed;
-    pointer-events: none;
-    z-index: 9998;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    overflow: visible;
-  `;
-
-  const hpPercent = data.hpMax > 0 ? Math.min((data.hp / data.hpMax) * 100, 100) : 0;
-  const mpPercent = data.mpMax > 0 ? Math.min((data.mp / data.mpMax) * 100, 100) : 0;
-
-  function shieldBlue(value) {
-    return `<svg viewBox="0 0 28 28" style="width:20px;height:20px;display:block;"><path d="M14 2L3 7.5v8c0 6.5 11 12.5 11 12.5s11-6 11-12.5v-8L14 2z" fill="#3498db" stroke="#2980b9" stroke-width="1.5"/><text x="14" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="white">${data.pd || 0}</text></svg>`;
-  }
-  function shieldPurple(value) {
-    return `<svg viewBox="0 0 28 28" style="width:20px;height:20px;display:block;"><path d="M14 2L3 7.5v8c0 6.5 11 12.5 11 12.5s11-6 11-12.5v-8L14 2z" fill="#9b59b6" stroke="#8e44ad" stroke-width="1.5"/><text x="14" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="white">${data.md || 0}</text></svg>`;
-  }
-
-  let isLocked = false;
-  try {
-    const lockData = JSON.parse(localStorage.getItem(`${LOCK_KEY}${tokenId}`));
-    isLocked = lockData?.locked || false;
-  } catch (e) {}
-  const lockIcon = isLocked ? '🔒' : '🔓';
-
-  container.innerHTML = `
-    <div style="position:relative;width:100%;aspect-ratio:1/1;pointer-events:auto;cursor:pointer;border-radius:50%;background:radial-gradient(circle at 35% 35%,#4a2a6a,#1a0a2a);border:2px solid #f0c060;box-shadow:0 0 20px rgba(240,192,96,0.12);overflow:visible;">
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;font-weight:bold;color:#f0c060;line-height:1;user-select:none;">👤</div>
-      <div style="position:absolute;bottom:-4px;right:2px;display:flex;gap:0;align-items:flex-end;max-width:55%;max-height:55%;font-size:0;">
-        <div style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:initial;">${shieldBlue()}</div>
-        <div style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:initial;">${shieldPurple()}</div>
-        <div style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;color:#f0c060;margin-left:2px;opacity:0.7;" class="fu-lock-btn">${lockIcon}</div>
-      </div>
-    </div>
-    <div style="width:100%;padding-top:1px;display:flex;flex-direction:column;gap:1.5px;">
-      <div style="position:relative;height:5px;min-height:3px;background:rgba(20,20,40,0.85);border-radius:3px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.06);width:100%;">
-        <div style="height:100%;border-radius:3px;transition:width 0.3s ease;background:linear-gradient(90deg,#c0392b,#e74c3c);width:${hpPercent}%;"></div>
-        <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:6.5px;font-weight:bold;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.95);white-space:nowrap;letter-spacing:0.2px;line-height:1;">HP ${data.hp}/${data.hpMax}</span>
-      </div>
-      <div style="position:relative;height:5px;min-height:3px;background:rgba(20,20,40,0.85);border-radius:3px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.06);width:100%;">
-        <div style="height:100%;border-radius:3px;transition:width 0.3s ease;background:linear-gradient(90deg,#2471a3,#5dade2);width:${mpPercent}%;"></div>
-        <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:6.5px;font-weight:bold;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.95);white-space:nowrap;letter-spacing:0.2px;line-height:1;">MP ${data.mp}/${data.mpMax}</span>
-      </div>
-    </div>
-    <div style="width:100%;text-align:center;font-size:10px;font-weight:600;color:#f0c060;letter-spacing:0.5px;padding-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;text-shadow:0 1px 6px rgba(0,0,0,0.8);flex-shrink:0;">${data.name}</div>
-  `;
-
-  document.body.appendChild(container);
-
-  function updatePosition() {
-    const rect = tokenEl.getBoundingClientRect();
-    const diameter = Math.min(rect.width, rect.height);
-    const containerWidth = diameter * 1.2;
-    const containerHeight = diameter + diameter * 0.7;
-    const left = rect.left + rect.width / 2 - containerWidth / 2;
-    const top = rect.top;
-    container.style.left = left + 'px';
-    container.style.top = top + 'px';
-    container.style.width = containerWidth + 'px';
-    container.style.height = containerHeight + 'px';
-    container.style.opacity = '1';
-  }
-
-  const observer = new MutationObserver(updatePosition);
-  observer.observe(tokenEl, { attributes: true, attributeFilter: ['style', 'transform'] });
-  window.addEventListener('resize', updatePosition);
-
-  const tokenLayer = container.querySelector('div[style*="position:relative"]');
-  if (tokenLayer) {
-    tokenLayer.addEventListener('click', (e) => {
-      if (e.target.closest('.fu-lock-btn')) return;
-      if (cardId) {
-        console.log('🃏 打开卡片:', cardId);
-        window.dispatchEvent(new CustomEvent('fu-open-card', { detail: { cardId } }));
-      } else {
-        alert(`📊 ${data.name}\nHP: ${data.hp}/${data.hpMax}\nMP: ${data.mp}/${data.mpMax}\n物防: ${data.pd}\n魔防: ${data.md}`);
-      }
-    });
-  }
-
-  const lockBtn = container.querySelector('.fu-lock-btn');
-  if (lockBtn) {
-    lockBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isLocked = !isLocked;
-      localStorage.setItem(`${LOCK_KEY}${tokenId}`, JSON.stringify({ locked: isLocked }));
-      lockBtn.textContent = isLocked ? '🔒' : '🔓';
-    });
-  }
-
-  const bindingData = { type: cardId ? 'role' : 'hpbar', cardId, tokenId, data };
-  localStorage.setItem(`${BINDING_KEY}${tokenId}`, JSON.stringify(bindingData));
-
-  setTimeout(updatePosition, 50);
-  console.log(`✅ 气泡已注入到Token: ${tokenId}`);
-  return container;
-}
-
-function bindRoleToToken(tokenId, cardId) {
-  const tokenEl = findTokenElement(tokenId);
-  if (!tokenEl) return;
-  const data = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${cardId}`));
-  if (!data) return;
-  injectBubble(tokenId, tokenEl, data, cardId);
-}
-
-function bindHpBarToToken(tokenId) {
-  const tokenEl = findTokenElement(tokenId);
-  if (!tokenEl) return;
-  const data = { name: '测试勇士', pd: 8, md: 12, hp: 75, hpMax: 100, mp: 40, mpMax: 80 };
-  injectBubble(tokenId, tokenEl, data, null);
-}
-
-// ============================================================
-// 使用枭熊2 SDK 注册右键菜单（base64透明图标）
-// ============================================================
-
-OBR.onReady(() => {
-  console.log('🎯 OBR SDK 已就绪');
-
-  OBR.contextMenu.create({
-    id: 'fu-character-extension/bind-role',
-    icons: [{
-      icon: ICON_BASE64,
       label: '📋 绑定FU角色卡',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }]
@@ -178,21 +113,17 @@ OBR.onReady(() => {
     }],
     onClick: async (context) => {
       const items = context.items;
+      if (items.length === 0) {
+        OBR.notification.show('请选择一个棋子 Token');
+        return;
+      }
+      const token = items[0];
       const cards = getCardList();
       if (cards.length === 0) {
         OBR.notification.show('暂无角色卡，请先导入');
         return;
       }
 
-      const items = await OBR.scene.items.getSelected();
-      if (items.length === 0) {
-        OBR.notification.show('请选择一个棋子 Token');
-        return;
-      }
-
-      const token = items[0];
-      
-      // 打开列表选择弹窗进入“绑定模式”
       OBR.popover.open({
         id: 'com.wow.fu-character/popover',
         url: `${base}/popover.html?bindTokenId=${token.id}&t=${Date.now()}`,
@@ -202,85 +133,7 @@ OBR.onReady(() => {
     }
   });
 
-  // 2. 右键菜单：绑定默认血条组件
-  OBR.contextMenu.create({
-    id: 'fu-character-extension/bind-hpbar',
-    icons: [{
-      icon: `${base}/assets/icon.png`,
-      label: '❤️ 绑定FU默认血条',
-  OBR.contextMenu.create({
-    id: 'fu-character-extension/bind-hpbar',
-    icons: [{
-      icon: ICON_BASE64,
-      label: '❤️ 绑定FU血条组件',
-      filter: {
-        every: [{ key: 'type', value: 'IMAGE' }]
-      }
-    }],
-    onClick: async (context) => {
-      const items = context.items;
-      if (items.length === 0) {
-        OBR.notification.show('请选择一个棋子 Token');
-        return;
-      }
-      const token = items[0];
-      const data = {
-        name: token.name || '测试勇士',
-        level: 5,
-        pd: 8,
-        md: 12,
-        hp: 75,
-        hpMax: 100,
-        mp: 40,
-        mpMax: 80,
-        ip: 6,
-        ipMax: 6,
-        dex: 8,
-        ins: 10,
-        mig: 8,
-        wlp: 8,
-        init: 6,
-        crisisCurrent: 6,
-        crisisMax: 6
-      };
-
-      await OBR.scene.items.updateItems([token.id], (items) => {
-        for (let item of items) {
-          if (item.type === 'IMAGE') {
-            item.metadata['com.wow.fu-character/data'] = data;
-            if (!item.text) {
-              item.text = {
-                richText: [{ type: "paragraph", children: [{ text: "" }] }],
-                plainText: "",
-                style: {
-                  padding: 8,
-                  fontFamily: "Roboto",
-                  fontSize: 24,
-                  fontWeight: 400,
-                  textAlign: "CENTER",
-                  textAlignVertical: "BOTTOM",
-                  fillColor: "white",
-                  fillOpacity: 1,
-                  strokeColor: "white",
-                  strokeOpacity: 1,
-                  strokeWidth: 0,
-                  lineHeight: 1.5,
-                },
-                type: "PLAIN",
-                width: "AUTO",
-                height: "AUTO",
-              };
-            }
-            item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
-            item.textItemType = 'LABEL';
-          }
-        }
-      });
-      OBR.notification.show('已成功绑定默认血条');
-    }
-  });
-
-  // 3. 右键菜单：打开角色卡 (popover)
+  // 2. 打开角色卡（手动触发）
   OBR.contextMenu.create({
     id: 'fu-character-extension/open-card',
     icons: [{
@@ -295,26 +148,30 @@ OBR.onReady(() => {
       const items = context.items;
       if (items.length === 0) return;
       const token = items[0];
-      
+      const binding = localStorage.getItem(`${BINDING_KEY}${token.id}`);
+      if (!binding) {
+        OBR.notification.show('该 Token 未绑定角色卡');
+        return;
+      }
+      const parsed = JSON.parse(binding);
+      if (!parsed.cardId) {
+        OBR.notification.show('未找到绑定的角色卡ID');
+        return;
+      }
       OBR.popover.open({
         id: 'fu-card-popover',
-        url: `${base}/full-card.html?tokenId=${token.id}&t=${Date.now()}`,
+        url: `${base}/full-card.html?cardId=${parsed.cardId}&tokenId=${token.id}&t=${Date.now()}`,
         width: 620,
         height: 600
       });
     }
   });
 
-  // 4. 右键菜单：解绑角色卡
+  // 3. 解绑
   OBR.contextMenu.create({
     id: 'fu-character-extension/unbind',
     icons: [{
       icon: `${base}/assets/icon.png`,
-      label: '🗑️ 解除绑定',
-  OBR.contextMenu.create({
-    id: 'fu-character-extension/unbind',
-    icons: [{
-      icon: ICON_BASE64,
       label: '🗑️ 解绑',
       filter: {
         every: [{ key: 'type', value: 'IMAGE' }],
@@ -326,6 +183,7 @@ OBR.onReady(() => {
       if (items.length === 0) return;
       const token = items[0];
 
+      // 清除 metadata 中的角色卡数据
       await OBR.scene.items.updateItems([token.id], (items) => {
         for (let item of items) {
           if (item.type === 'IMAGE') {
@@ -336,15 +194,12 @@ OBR.onReady(() => {
           }
         }
       });
-      OBR.notification.show('已解除角色卡绑定');
+
+      // 清除本地绑定记录
+      localStorage.removeItem(`${BINDING_KEY}${token.id}`);
+      OBR.notification.show('已解绑');
     }
   });
 
-  // 5. 『选中棋子自动弹出角色卡』监听器已移除
-  // 原因：OBR 中右键点击棋子也会触发 selection 变化，为避免右键菜单与卡片重叠冲突，
-  // 现统一改为通过右键菜单「打开FU角色卡」或左侧栏面板中点击进行查看。
-  console.log('✅ 右键菜单已注册（base64透明图标）');
-});
-
-  console.log('✅ 右键菜单已成功注册');
+  console.log('✅ 右键菜单已注册（不含血条组件）');
 });

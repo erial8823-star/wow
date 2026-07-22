@@ -123,7 +123,7 @@ function renderList() {
         return;
       }
 
-      // 绑定模式下：绑定到指定的 bindTokenId
+      // ===== 绑定模式下：绑定到指定的 bindTokenId =====
       const tokenId = bindTokenId;
       const data = JSON.parse(localStorage.getItem(STORAGE_PREFIX + cardId));
       if (!data) return;
@@ -162,7 +162,7 @@ function renderList() {
               weapon2: data.weapon2
             };
             
-            // 自动更新 Token 的原生 Label（在棋子下方显示血量）
+            // ★★★ 修改：Token 原生标签只显示角色名（不再显示 HP） ★★★
             if (!item.text) {
               item.text = {
                 richText: [{ type: "paragraph", children: [{ text: "" }] }],
@@ -186,7 +186,8 @@ function renderList() {
                 height: "AUTO",
               };
             }
-            item.text.plainText = `${data.name}\nHP ${data.hp}/${data.hpMax}`;
+            // 只显示角色名
+            item.text.plainText = data.name;
             item.textItemType = 'LABEL';
           }
         }
