@@ -74,3 +74,4 @@ export class ExcelParser {
     return characterData;
   }
 }
+export default ExcelParser;

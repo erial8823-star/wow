@@ -1,25 +1,13 @@
-import { defineConfig } from 'vite';
-import { resolve } from 'path';
-import basicSsl from '@vitejs/plugin-basic-ssl';
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [
-    basicSsl()
-  ],
+  base: "./", // 确保打包后的静态资源使用相对路径
   build: {
     rollupOptions: {
       input: {
-        background: resolve(__dirname, 'background.js'),
-        popover: resolve(__dirname, 'popover.js'),
-        'full-card': resolve(__dirname, 'full-card.js'),
-      },
-      output: {
-        entryFileNames: '[name].js',
-        format: 'es',
+        background: "background.html",
+        popover: "popover.html",
       },
     },
-    outDir: 'dist',
-    emptyOutDir: true,
-    minify: true,
   },
 });

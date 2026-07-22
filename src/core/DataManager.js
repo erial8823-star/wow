@@ -94,3 +94,4 @@ export class DataManager {
     return summaries;
   }
 }
+export default DataManager;

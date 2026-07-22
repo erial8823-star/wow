@@ -10,7 +10,8 @@ let selectedCardData = null;
 let currentUserRole = "PLAYER";
 
 OBR.onReady(async () => {
-  currentUserRole = await OBR.room.getRole();
+  // 修正为 OBR.player.getRole()
+  currentUserRole = await OBR.player.getRole();
 
   const urlParams = new URLSearchParams(window.location.search);
   currentMode = urlParams.get("mode") || "bind";
@@ -83,7 +84,6 @@ function refreshCardList() {
   const listContainer = document.getElementById("card-list-container");
   if (!listContainer) return;
 
-  // 兼容调用 DataManager 的获取卡片方法
   let allCards = [];
   if (typeof DataManager.getCards === "function") {
     allCards = DataManager.getCards();

@@ -4,26 +4,29 @@ import OBR from "@owlbear-rodeo/sdk";
 export const METADATA_KEY = "com.wow.fu-character";
 
 /**
- * 获取当前用户的角色 (GM 或 PLAYER)
+ * 兼容性随机 ID 生成器
+ */
+function generateUniqueId() {
+  return "id_" + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+}
+
+/**
+ * 获取当前用户的角色 (GM 或 PLAYER) —— 修正 API 调用的地方！
  */
 async function getUserRole() {
-  return await OBR.room.getRole();
+  return await OBR.player.getRole();
 }
 
 /**
  * 创建并绑定气泡到 Token 上
- * @param {string} tokenId - 目标 Token 的 ID
- * @param {Object} characterData - 角色卡数据
  */
 export async function createBubble(tokenId, characterData) {
-  // 如果已经存在气泡，先清理旧气泡
   await removeBubble(tokenId);
 
   const role = await getUserRole();
   const isGM = role === "GM";
   const isLocked = characterData.locked ?? false;
 
-  // 计算血量与魔力比例 (0 到 1 之间)
   const hpMax = characterData.hpMax || 100;
   const hp = Math.max(0, Math.min(characterData.hp ?? hpMax, hpMax));
   const hpRatio = hpMax > 0 ? hp / hpMax : 0;
@@ -32,10 +35,8 @@ export async function createBubble(tokenId, characterData) {
   const mp = Math.max(0, Math.min(characterData.mp ?? mpMax, mpMax));
   const mpRatio = mpMax > 0 ? mp / mpMax : 0;
 
-  // 基础位置偏移 (相对于 Token 的左上角)
   const baseUrl = { x: 0, y: -75 };
 
-  // 通用图形属性：必须设置 disableHit 和 disableSelection 以实现点击穿透
   const commonProps = {
     attachedTo: tokenId,
     disableHit: true,
@@ -45,11 +46,10 @@ export async function createBubble(tokenId, characterData) {
     visible: true,
   };
 
-  // 1. 背景框
   const bgItem = {
     ...commonProps,
     type: "RECTANGLE",
-    id: window.crypto.randomUUID(),
+    id: generateUniqueId(),
     position: { x: baseUrl.x, y: baseUrl.y },
     width: 140,
     height: 65,
@@ -59,11 +59,10 @@ export async function createBubble(tokenId, characterData) {
     cornerRadius: 6,
   };
 
-  // 2. HP 槽背景
   const hpBgItem = {
     ...commonProps,
     type: "RECTANGLE",
-    id: window.crypto.randomUUID(),
+    id: generateUniqueId(),
     position: { x: baseUrl.x + 10, y: baseUrl.y + 12 },
     width: 120,
     height: 8,
@@ -71,11 +70,10 @@ export async function createBubble(tokenId, characterData) {
     cornerRadius: 2,
   };
 
-  // 3. HP 进度条
   const hpFillItem = {
     ...commonProps,
     type: "RECTANGLE",
-    id: window.crypto.randomUUID(),
+    id: generateUniqueId(),
     position: { x: baseUrl.x + 10, y: baseUrl.y + 12 },
     width: Math.max(2, 120 * hpRatio),
     height: 8,
@@ -83,11 +81,10 @@ export async function createBubble(tokenId, characterData) {
     cornerRadius: 2,
   };
 
-  // 4. MP 槽背景
   const mpBgItem = {
     ...commonProps,
     type: "RECTANGLE",
-    id: window.crypto.randomUUID(),
+    id: generateUniqueId(),
     position: { x: baseUrl.x + 10, y: baseUrl.y + 24 },
     width: 120,
     height: 6,
@@ -95,11 +92,10 @@ export async function createBubble(tokenId, characterData) {
     cornerRadius: 2,
   };
 
-  // 5. MP 进度条
   const mpFillItem = {
     ...commonProps,
     type: "RECTANGLE",
-    id: window.crypto.randomUUID(),
+    id: generateUniqueId(),
     position: { x: baseUrl.x + 10, y: baseUrl.y + 24 },
     width: Math.max(2, 120 * mpRatio),
     height: 6,
@@ -107,10 +103,9 @@ export async function createBubble(tokenId, characterData) {
     cornerRadius: 2,
   };
 
-  // 判断文字遮蔽（锁逻辑）
   const lockIcon = isLocked ? "🔒" : "🔓";
   const nameText = characterData.name || "未命名角色";
-  
+
   let statsLine = "";
   let defLine = "";
 
@@ -122,11 +117,10 @@ export async function createBubble(tokenId, characterData) {
     defLine = `物防:${characterData.pd ?? "-"}  魔防:${characterData.md ?? "-"}`;
   }
 
-  // 6. 文字信息节点
   const textItem = {
     ...commonProps,
     type: "TEXT",
-    id: window.crypto.randomUUID(),
+    id: generateUniqueId(),
     position: { x: baseUrl.x + 70, y: baseUrl.y + 34 },
     text: {
       plainText: `${lockIcon} ${nameText}\n${statsLine}\n${defLine}`,
@@ -140,11 +134,9 @@ export async function createBubble(tokenId, characterData) {
     },
   };
 
-  // 批量提交到枭熊场景
   const allBubbleItems = [bgItem, hpBgItem, hpFillItem, mpBgItem, mpFillItem, textItem];
   await OBR.scene.items.addItems(allBubbleItems);
 
-  // 将记录关联 ID 和数据的 Metadata 保存到 Token 上
   const attachments = {
     bgId: bgItem.id,
     hpBgId: hpBgItem.id,
@@ -166,6 +158,7 @@ export async function createBubble(tokenId, characterData) {
 
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (let item of items) {
+      if (!item.metadata) item.metadata = {};
       item.metadata[METADATA_KEY] = finalData;
     }
   });
@@ -173,16 +166,13 @@ export async function createBubble(tokenId, characterData) {
 
 /**
  * 更新现有气泡显示
- * @param {string} tokenId - 目标 Token 的 ID
- * @param {Object} updatedData - 新的角色数据
  */
 export async function updateBubble(tokenId, updatedData) {
   const [token] = await OBR.scene.items.getItems([tokenId]);
   if (!token) return;
 
-  const currentData = token.metadata[METADATA_KEY];
+  const currentData = token.metadata ? token.metadata[METADATA_KEY] : null;
   if (!currentData || !currentData.attachments) {
-    // 若没有附件关联记录，则重新初始化创建
     return await createBubble(tokenId, updatedData);
   }
 
@@ -201,7 +191,6 @@ export async function updateBubble(tokenId, updatedData) {
   const mp = Math.max(0, Math.min(data.mp ?? mpMax, mpMax));
   const mpRatio = mpMax > 0 ? mp / mpMax : 0;
 
-  // 更新 HP 和 MP 进度条宽度
   await OBR.scene.items.updateItems(
     [attachments.hpFillId, attachments.mpFillId],
     (items) => {
@@ -215,10 +204,9 @@ export async function updateBubble(tokenId, updatedData) {
     }
   );
 
-  // 更新文字内容
   const lockIcon = isLocked ? "🔒" : "🔓";
   const nameText = data.name || "未命名角色";
-  
+
   let statsLine = "";
   let defLine = "";
 
@@ -238,9 +226,9 @@ export async function updateBubble(tokenId, updatedData) {
     }
   });
 
-  // 更新 Token 上的 Metadata
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (let item of items) {
+      if (!item.metadata) item.metadata = {};
       item.metadata[METADATA_KEY] = data;
     }
   });
@@ -248,22 +236,22 @@ export async function updateBubble(tokenId, updatedData) {
 
 /**
  * 删除 Token 上的绑定气泡并清除 Metadata
- * @param {string} tokenId - 目标 Token 的 ID
  */
 export async function removeBubble(tokenId) {
   const [token] = await OBR.scene.items.getItems([tokenId]);
   if (!token) return;
 
-  const data = token.metadata[METADATA_KEY];
+  const data = token.metadata ? token.metadata[METADATA_KEY] : null;
   if (data && data.attachments) {
     const idsToDelete = Object.values(data.attachments);
     await OBR.scene.items.deleteItems(idsToDelete);
   }
 
-  // 清空 Token 的 Metadata 标记
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (let item of items) {
-      delete item.metadata[METADATA_KEY];
+      if (item.metadata) {
+        delete item.metadata[METADATA_KEY];
+      }
     }
   });
 }
